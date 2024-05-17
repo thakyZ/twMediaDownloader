@@ -2,7 +2,7 @@
     "manifest_version" : 2
 ,   "name" : "__MSG_ext_title__"
 ,   "short_name" : "__MSG_ext_short_name__"
-,   "version" : "0.1.4.12"
+,   "version" : "0.1.5.4"
 ,   "description" : "__MSG_ext_description__"
 ,   "author" : "furyu"
 ,   "default_locale" : "en"
@@ -12,35 +12,41 @@
     ,   "48" : "img/icon_48.png"
     ,   "128" : "img/icon_128.png"
     }
-,   "permissions": [ "storage", "webRequest", "webRequestBlocking", "*://*.twitter.com/*", "*://pbs.twimg.com/*", "*://video.twimg.com/*", "*://*.cdn.vine.co/*" ]
+,   "permissions": [
+        "storage",
+        "*://*.x.com/*",
+        "*://pbs.twimg.com/*",
+        "*://video.twimg.com/*",
+        "*://*.cdn.vine.co/*"
+    ]
 ,   "content_scripts" : [
         {
-            "matches" : [ "*://twitter.com/*", "*://tweetdeck.twitter.com/*", "*://api.twitter.com/*", "*://*.furyutei.work/oauth/*", "*://pbs.twimg.com/media/*" ]
+            "matches" : [ "*://x.com/*", "*://tweetdeck.x.com/*", "*://api.x.com/*", "*://pbs.twimg.com/media/*", "*://mobile.x.com/*" ]
         ,   "js" : [ "js/browser_info.js", "js/jquery.min.js", "js/twitter-oauth/sha1.js", "js/twitter-oauth/oauth.js", "js/twitter-oauth/twitter-api.js", "js/session.js" ]
         ,   "run_at" : "document_start"
         ,   "all_frames" : false
         }
     ,   {
-            "matches" : [ "*://twitter.com/*", "*://tweetdeck.twitter.com/*", "*://pbs.twimg.com/media/*" ]
-        ,   "js" : [ "js/decimal.min.js", "js/jszip.min.js", "js/zip_request_legacy.js", "js/init.js", "js/timeline.js" ]
+            "matches" : [ "*://x.com/*", "*://tweetdeck.x.com/*", "*://pbs.twimg.com/media/*", "*://mobile.x.com/*" ]
+        ,   "js" : [ "js/decimal.min.js", "js/jszip.min.js", "js/init.js", "js/timeline.js" ]
         ,   "run_at" : "document_start"
         ,   "all_frames" : true
         }
     ,   {
-            "matches" : [ "*://twitter.com/*" ]
-        ,   "js" : [ "js/main_react.user.js", "js/twMediaDownloader.user.js" ]
+            "matches" : [ "*://x.com/*", "*://mobile.x.com/*" ]
+        ,   "js" : [ "js/main_react.user.js" ]
         ,   "run_at" : "document_end"
         ,   "all_frames" : true
         }
     ,   {
-            "matches" : [ "*://tweetdeck.twitter.com/*" ]
+            "matches" : [ "*://tweetdeck.x.com/*" ]
         ,   "js" : [ "js/main_tweetdeck.user.js" ]
         ,   "run_at" : "document_end"
         ,   "all_frames" : true
         }
     ]
 ,   "background": {
-        "scripts" : [ "js/jszip.min.js", "js/zip_worker.js", "js/background.js" ]
+        "scripts" : [ "js/background.js" ]
     ,   "persistent" : true
     }
 ,   "options_ui" : {
@@ -51,6 +57,23 @@
         "default_icon" : "img/icon_16.png"
     ,   "default_title" : "__MSG_ext_title__"
     ,   "default_popup" : "html/options.html"
+    }
+,   "commands" : {
+        "bulk_download" : {
+            "suggested_key" : {
+                "default" : "Shift+Alt+D",
+                "mac" : "Shift+Alt+D"
+            },
+            "description" : "__MSG_BULK_DOWNLOAD__"
+        },
+        
+        "bulk_download_likes" : {
+            "suggested_key" : {
+                "default" : "Shift+Alt+L",
+                "mac" : "Shift+Alt+L"
+            },
+            "description" : "__MSG_BULK_DOWNLOAD_LIKES__"
+        }
     }
 ,   "applications": {
         "gecko": {

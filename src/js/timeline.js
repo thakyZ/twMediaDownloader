@@ -8,7 +8,7 @@ const
 
 ( ( exports ) => {
 const
-    VERSION = '0.1.0',
+    VERSION = '0.1.4',
     
     DEFAULT_DEBUG_MODE = false,
     DEFAULT_SCRIPT_NAME = MODULE_NAME,
@@ -25,8 +25,8 @@ const
         return context_global.is_web_extension || context_global.is_chrome_extension;
     } )(),
     
-    use_agent = navigator.userAgent.toLowerCase(),
-    IS_FIREFOX = ( 0 <= use_agent.toLowerCase().indexOf( 'firefox' ) ),
+    user_agent = navigator.userAgent.toLowerCase(),
+    IS_FIREFOX = ( 0 <= user_agent.indexOf( 'firefox' ) ),
     
     // ■ Firefox で XMLHttpRequest や fetch が予期しない動作をしたり、開発者ツールのネットワークに通信内容が表示されないことへの対策
     // 参考: [Firefox のアドオン(content_scripts)でXMLHttpRequestやfetchを使う場合の注意 - 風柳メモ](https://memo.furyutei.work/entry/20180718/1531914142)
@@ -220,7 +220,7 @@ const
     ID_INC_PER_MSEC = Decimal.pow( 2, 22 ), // ミリ秒毎のID増分
     ID_INC_PER_SEC = ID_INC_PER_MSEC.mul( 1000 ), // 秒毎のID増分
     TWEPOCH_OFFSET_MSEC = 1288834974657,
-    TWEPOCH_OFFSET_SEC = Math.ceil( TWEPOCH_OFFSET_MSEC / 1000 ), // 1288834974.657 sec (2011.11.04 01:42:54(UTC)) (via http://www.slideshare.net/pfi/id-15755280)
+    TWEPOCH_OFFSET_SEC = Math.ceil( TWEPOCH_OFFSET_MSEC / 1000 ), // 1288834974.657 sec (2010.11.04 01:42:54(UTC)) (via http://www.slideshare.net/pfi/id-15755280)
     ID_THRESHOLD = '300000000000000', // 2010.11.04 22時(UTC)頃に、IDが 30000000000以下から300000000000000以上に切り替え
     DEFAULT_UNTIL_ID = '9153891586667446272', // // datetime_to_tweet_id(Date.parse( '2080-01-01T00:00:00.000Z' )) => 9153891586667446272
     
@@ -294,13 +294,15 @@ const
     }, // end of convert_bookmark_id_to_date()
     
     {
+        convert_sort_index_to_cursor,
+        create_tweet_id_cursor,
         create_likes_cursor,
         create_bookmarks_cursor,
     } = ( () => {
         const
-            num_to_dec64_char_map = Array( 64 ).fill().map( (_, i ) => {
-                if ( 0 <= i && i <= 25 ) return String.fromCharCode( 'A'.charCodeAt(0) + i );
-                if ( 26 <= i && i <= 51 ) return String.fromCharCode( 'a'.charCodeAt(0) + ( i - 26 ) );
+            num_to_dec64_char_map = Array( 64 ).fill().map( ( _, i ) => {
+                if ( 0 <= i && i <= 25 ) return String.fromCharCode( 'A'.charCodeAt( 0 ) + i );
+                if ( 26 <= i && i <= 51 ) return String.fromCharCode( 'a'.charCodeAt( 0 ) + ( i - 26 ) );
                 if ( 52 <= i && i <= 61 ) return '' + ( i - 52 );
                 if ( i == 62 ) return '+';
                 return '/';
@@ -322,8 +324,30 @@ const
                 }
             } )(),
             
-            create_likes_cursor = ( like_id, is_previous = false ) => {
-                let sort_index_bin = ( '0'.repeat( 64 ) + to_binary( new Decimal( like_id ) ) ).slice( -64 ),
+            //create_likes_cursor = ( like_id, is_previous = false ) => {
+            //    let sort_index_bin = ( '0'.repeat( 64 ) + to_binary( new Decimal( like_id ).add( is_previous ? -1 : 1 ) ) ).slice( -64 ),
+            //        cursor = [
+            //        /*  0 */ sort_index_bin.substr( 5, 4 ) + '00',
+            //        /*  1 */ sort_index_bin.substr( 14, 2 ) + sort_index_bin.substr( 1, 4 ),
+            //        /*  2 */ '1' + sort_index_bin.substr( 9, 5 ),
+            //        /*  3 */ sort_index_bin.substr( 17, 6 ),
+            //        /*  4 */ sort_index_bin.substr( 26, 4 ) + '1' + sort_index_bin.substr( 16, 1 ),
+            //        /*  5 */ sort_index_bin.substr( 35, 2 ) + '1' + sort_index_bin.substr( 23, 3 ),
+            //        /*  6 */ '1' + sort_index_bin.substr( 30, 5 ),
+            //        /*  7 */ sort_index_bin.substr( 38, 6 ),
+            //        /*  8 */ sort_index_bin.substr( 47, 4 ) + '1' + sort_index_bin.substr( 37, 1 ),
+            //        /*  9 */ sort_index_bin.substr( 56, 2 ) + '1' + sort_index_bin.substr( 44, 3 ),
+            //        /* 10 */ '1' + sort_index_bin.substr( 51, 5 ),
+            //        ///* 11 */ ( '0'.repeat( 5 ) + ( parseInt( sort_index_bin.substr( 59, 5 ), 2 ) + ( is_previous ? -1 : 1 ) ).toString( 2 ) ).slice( -5 ) + '0',
+            //        /* 11 */ sort_index_bin.substr( 59, 5 ) + '0',
+            //        /* 12 */ '01101' + sort_index_bin.substr( 58, 1 ),
+            //        ].map( ( sexted_bin, index ) => num_to_dec64_char_map[ parseInt( sexted_bin, 2 ) ] ).reverse().join( '' );
+            //    
+            //    return ( is_previous ? 'HC' : 'HB' ) +  cursor + 'AAA==';
+            //},
+            
+            convert_sort_index_to_cursor = ( sort_index, is_previous = false ) => {
+                let sort_index_bin = ( '0'.repeat( 64 ) + to_binary( new Decimal( sort_index ).add( is_previous ? -1 : 1 ) ) ).slice( -64 ),
                     cursor = [
                     /*  0 */ sort_index_bin.substr( 5, 4 ) + '00',
                     /*  1 */ sort_index_bin.substr( 14, 2 ) + sort_index_bin.substr( 1, 4 ),
@@ -336,15 +360,18 @@ const
                     /*  8 */ sort_index_bin.substr( 47, 4 ) + '1' + sort_index_bin.substr( 37, 1 ),
                     /*  9 */ sort_index_bin.substr( 56, 2 ) + '1' + sort_index_bin.substr( 44, 3 ),
                     /* 10 */ '1' + sort_index_bin.substr( 51, 5 ),
-                    /* 11 */ ( '0'.repeat( 5 ) + ( parseInt( sort_index_bin.substr( 59, 5 ), 2 ) + 1 ).toString( 2 ) ).slice( -5 ) + '0',
-                    /* 12 */ '001101' + sort_index_bin.substr( 58, 1 ),
+                    /* 11 */ sort_index_bin.substr( 59, 5 ) + '0',
+                    /* 12 */ '01101' + sort_index_bin.substr( 58, 1 ),
                     ].map( ( sexted_bin, index ) => num_to_dec64_char_map[ parseInt( sexted_bin, 2 ) ] ).reverse().join( '' );
                 
                 return ( is_previous ? 'HC' : 'HB' ) +  cursor + 'AAA==';
             },
             
+            create_tweet_id_cursor = ( tweet_id, is_previous = false ) => convert_sort_index_to_cursor( tweet_id, is_previous ),
+            create_likes_cursor = ( like_id, is_previous = false ) => convert_sort_index_to_cursor( like_id, is_previous ),
+            
             create_bookmarks_cursor = ( bookmark_id, is_previous = false ) => {
-                let sort_index_bin = ( '0'.repeat( 64 ) + to_binary( new Decimal( bookmark_id ) ) ).slice( -64 ),
+                let sort_index_bin = ( '0'.repeat( 64 ) + to_binary( new Decimal( bookmark_id ).add( ( is_previous ? -1 : 1 ) * ( 2 ** 8 ) ) ) ).slice( -64 ),
                     cursor = [
                     /*  0 */ sort_index_bin.substr( 5, 4 ) + '00',
                     /*  1 */ sort_index_bin.substr( 14, 2 ) + sort_index_bin.substr( 1, 4 ),
@@ -353,10 +380,11 @@ const
                     /*  4 */ sort_index_bin.substr( 26, 4 ) + '1' + sort_index_bin.substr( 16, 1 ),
                     /*  5 */ sort_index_bin.substr( 35, 2 ) + '1' + sort_index_bin.substr( 23, 3 ),
                     /*  6 */ '1' + sort_index_bin.substr( 30, 5 ),
-                    /*  7 */ sort_index_bin.substr( 38, 5 ) + sort_index_bin.substr( 43, 1 ),
+                    /*  7 */ sort_index_bin.substr( 38, 6 ),
                     /*  8 */ sort_index_bin.substr( 47, 4 ) + '1' + sort_index_bin.substr( 37, 1 ),
                     /*  9 */ '001' + sort_index_bin.substr( 44, 3 ),
-                    /* 10 */ '1' + ( '0'.repeat( 5 ) + ( parseInt( sort_index_bin.substr( 51, 5 ), 2 ) + 1 ).toString( 2 ) ).slice( -5 ),
+                    ///* 10 */ '1' + ( '0'.repeat( 5 ) + ( parseInt( sort_index_bin.substr( 51, 5 ), 2 ) +  ( is_previous ? -1 : 1 ) ).toString( 2 ) ).slice( -5 ),
+                    /* 10 */ '1' + sort_index_bin.substr( 51, 5 ),
                     /* 11 */ '000000',
                     /* 12 */ '011010',
                     ].map( ( sexted_bin, index ) => num_to_dec64_char_map[ parseInt( sexted_bin, 2 ) ] ).reverse().join( '' );
@@ -365,6 +393,8 @@ const
             };
         
         return {
+            convert_sort_index_to_cursor,
+            create_tweet_id_cursor,
             create_likes_cursor,
             create_bookmarks_cursor,
         };
@@ -384,6 +414,7 @@ const
     TIMELINE_TYPE = {
         unknown : null,
         user : 'user',
+        media : 'media',
         search : 'search',
         notifications : 'notifications',
         likes : 'likes',
@@ -434,14 +465,15 @@ const
                 self = this;
             
             Object.assign( self, {
-                API_AUTHORIZATION_BEARER : 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+                API_AUTHORIZATION_BEARER : 'AAAAAAAAAAAAAAAAAAAAAF7aAAAAAAAASCiRjWvh7R5wxaKkFp7MM%2BhYBqM%3DbQ0JPmjU9F6ZoMhDfI4uTNAaQuTDm2uO9x3WFVr2xBZ2nhjdP0',
+                API2_AUTHORIZATION_BEARER : 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
                 // TODO: 継続して使えるかどうか不明→変更された場合の対応を要検討
                 // ※ https://abs.twimg.com/responsive-web/client-web/main.<version>.js (例：https://abs.twimg.com/responsive-web/client-web/main.1b19a825.js) 内で定義されている値
                 // ※ これを使用しても、一定時間内のリクエスト回数に制限有り→参考: [TwitterのAPI制限 [2019/11/17現在] - Qiita](https://qiita.com/mpyw/items/32d44a063389236c0a65)
                 
                 // Twitter API には Rate Limit があるため、続けてコールする際に待ち時間を挟む必要あり（15分毎にリセットされる）
                 // - statuses/user_timeline 等の場合、900回/15分
-                // - activity/about_me、timeline/favorites等の場合、180回/15分
+                // - activity/about_me、timeline/favorites、timeline/media等の場合、180回/15分
                 // - favorites/list 等の場合、75回/15分
                 // - timeline/bookmark 等の場合、1000回/15分
                 TWITTER_API_DELAY_SHORT : ( ( 15 * 60 ) / 900 + 1 ) * 1000,
@@ -453,42 +485,50 @@ const
             Object.assign( self, {
                 API_DEFINITIONS : {
                     [ TIMELINE_TYPE.user ] : {
-                        url_template : 'https://api.twitter.com/1.1/statuses/user_timeline.json?count=#COUNT#&include_my_retweet=1&include_rts=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
-                        tweet_number : { default : 20, limit : 40 },
+                        url_template : 'https://api.x.com/1.1/statuses/user_timeline.json?count=#COUNT#&include_my_retweet=1&include_rts=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        tweet_number : { default : 20, limit : 200 },
                         min_delay_ms : self.TWITTER_API_DELAY_SHORT,
                         max_retry : 3,
                     },
                     
-                    [ TIMELINE_TYPE.search ] : {
-                        url_template : 'https://api.twitter.com/1.1/search/universal.json?q=#QUERY#&count=#COUNT#&modules=status&result_type=recent&pc=false&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
-                        tweet_number : { default : 20, limit : 40 },
-                        min_delay_ms : self.TWITTER_API_DELAY_SHORT,
-                        max_retry : 3,
-                    },
-                    
-                    [ TIMELINE_TYPE.notifications ] : {
-                        url_template : 'https://api.twitter.com/1.1/activity/about_me.json?model_version=7&count=#COUNT#&skip_aggregation=true&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                    [ TIMELINE_TYPE.media ] : {
+                        url_template : 'https://api.x.com/2/timeline/media/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_LONG,
                         max_retry : 3,
                     },
                     
+                    [ TIMELINE_TYPE.search ] : {
+                        url_template : 'https://api.x.com/1.1/search/universal.json?q=#QUERY#&count=#COUNT#&modules=status&result_type=recent&pc=false&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        tweet_number : { default : 20, limit : 100 },
+                        min_delay_ms : self.TWITTER_API_DELAY_SHORT,
+                        max_retry : 3,
+                        max_retry_if_empty_result: 10,
+                    },
+                    
+                    [ TIMELINE_TYPE.notifications ] : {
+                        url_template : 'https://api.x.com/1.1/activity/about_me.json?model_version=7&count=#COUNT#&skip_aggregation=true&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        tweet_number : { default : 20, limit : 200 },
+                        min_delay_ms : self.TWITTER_API_DELAY_LONG,
+                        max_retry : 3,
+                    },
+                    
                     [ TIMELINE_TYPE.likes_legacy ] : {
-                        url_template : 'https://api.twitter.com/1.1/favorites/list.json?count=#COUNT#&include_my_retweet=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
-                        tweet_number : { default : 20, limit : 40 },
+                        url_template : 'https://api.x.com/1.1/favorites/list.json?count=#COUNT#&include_my_retweet=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        tweet_number : { default : 20, limit : 200 },
                         min_delay_ms : self.TWITTER_API_DELAY_VERY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.likes ] : {
-                        url_template : 'https://api.twitter.com/2/timeline/favorites/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&sorted_by_time=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
+                        url_template : 'https://api.x.com/2/timeline/favorites/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&sorted_by_time=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.bookmarks ] : {
-                        url_template : 'https://api.twitter.com/2/timeline/bookmark.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
+                        url_template : 'https://api.x.com/2/timeline/bookmark.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_SHORT,
                         max_retry : 3,
@@ -596,6 +636,21 @@ const
             return await self.fetch_timeline_common( timeline_type, api_url );
         } // end of fetch_bookmarks_timeline()
         
+        async fetch_media_timeline( user_id, cursor, count ) {
+            const
+                self = this,
+                timeline_type = TIMELINE_TYPE.media,
+                api_def = self.API_DEFINITIONS[ timeline_type ];
+            
+            if ( isNaN( count ) || ( count < 0 ) || ( api_def.tweet_number.limit < count ) ) {
+                count = api_def.tweet_number.default;
+            }
+            
+            let api_url = api_def.url_template.replace( /#USER_ID#/g, user_id ).replace( /#COUNT#/g, count ) + ( cursor  ? '&cursor=' + encodeURIComponent( cursor ) : '' );
+            
+            return await self.fetch_timeline_common( timeline_type, api_url );
+        } // end of fetch_media_timeline()
+        
         async fetch_timeline_common( timeline_type, url, options ) {
             const
                 self = this,
@@ -650,7 +705,7 @@ const
                 return { error : 'Illegal parameters' };
             }
             
-            let api_url = 'https://api.twitter.com/1.1/users/show.json?' + ( user_id ? 'user_id=' + encodeURIComponent( user_id ) : 'screen_name=' + encodeURIComponent( screen_name ) ),
+            let api_url = 'https://api.x.com/1.1/users/show.json?' + ( user_id ? 'user_id=' + encodeURIComponent( user_id ) : 'screen_name=' + encodeURIComponent( screen_name ) ),
                 result = await self.fetch_json( api_url ).catch( ( error ) => {
                     return { error : error };
                 } );
@@ -671,7 +726,7 @@ const
             
             options = Object.assign( {
                 method : 'GET',
-                headers : self.create_api_header(),
+                headers : self.create_api_header( url ),
                 mode : 'cors',
                 credentials : 'include',
             }, options || {} );
@@ -680,7 +735,7 @@ const
             
             if ( IS_WEB_EXTENSION && browser && ( ! IS_FIREFOX ) ) {
                 /*
-                // 注意：[Firefox でコンテナーを使用している場合、background 経由だと動作しない（403 Forbidden発生）](https://twitter.com/furyutei/status/1295057562870546433)
+                // 注意：[Firefox でコンテナーを使用している場合、background 経由だと動作しない（403 Forbidden発生）](https://x.com/furyutei/status/1295057562870546433)
                 */
                 
                 /*
@@ -722,12 +777,12 @@ const
             return result;
         } // end of fetch_json()
         
-        create_api_header() {
+        create_api_header( api_url ) {
             const
                 self = this;
             
             return {
-                'authorization' : 'Bearer ' + self.API_AUTHORIZATION_BEARER,
+                'authorization' : 'Bearer ' + ( ( ( api_url || '' ).indexOf( '/2/' ) < 0 ) ? self.API_AUTHORIZATION_BEARER : self.API2_AUTHORIZATION_BEARER ),
                 'x-csrf-token' : self.csrf_token,
                 'x-twitter-active-user' : 'yes',
                 'x-twitter-auth-type' : 'OAuth2Session',
@@ -740,7 +795,7 @@ const
                 self = this;
             
             if ( ! self.language ) {
-                if ( new URL( location.href ).hostname == 'tweetdeck.twitter.com' ) {
+                if ( new URL( location.href ).hostname == 'tweetdeck.x.com' ) {
                     self.language = ( navigator.browserLanguage || navigator.language || navigator.userLanguage ).substr( 0, 2 );
                 }
                 else {
@@ -851,30 +906,45 @@ const
             }
             
             let count = options.count,
-                json = await TWITTER_API.fetch_search_timeline( query, count ).catch( ( error ) => {
+                max_retry_if_empty_result = options.max_retry_if_empty_result || TWITTER_API.API_DEFINITIONS[ TIMELINE_TYPE.search ].max_retry_if_empty_result, // TODO: Twitter側の問題で検索条件に合致するツイートが存在するにも関わらず結果が0で返ることがある→暫定的にリトライすることで対処
+                original_delay_min_delay_ms = TWITTER_API.API_DEFINITIONS[ TIMELINE_TYPE.search ].min_delay_ms,
+                json,
+                tweet_info_list = [];
+            
+            for (let retry_count=0; retry_count <= max_retry_if_empty_result; retry_count++) {
+                if (0 < retry_count) {
+                    TWITTER_API.API_DEFINITIONS[ TIMELINE_TYPE.search ].min_delay_ms = TWITTER_API.TWITTER_API_DELAY_SHORT; // 外部から間隔が調整されている場合でも、リトライ時には本来の間隔に戻す
+                }
+                json  = await TWITTER_API.fetch_search_timeline( query, count ).catch( ( error ) => {
                     log_error( 'TWITTER_API.fetch_user_timeline() error:', error );
                     return null;
                 } );
-            
-            if ( ! json ) {
-                return {
-                    json : null,
-                    error : 'fetch error',
-                };
-            }
-            
-            log_debug( 'get_search_timeline_info(): json=', json );
-            
-            let modules = json.modules;
-            
-            if ( ! Array.isArray( modules ) ) {
-                return {
-                    json : json,
-                    error : 'result JSON structure error',
-                };
-            }
-            
-            let tweet_info_list = modules.map( ( module ) => {
+                TWITTER_API.API_DEFINITIONS[ TIMELINE_TYPE.search ].min_delay_ms = original_delay_min_delay_ms;
+                
+                if ( ! json ) {
+                    return {
+                        json : null,
+                        error : 'fetch error',
+                    };
+                }
+                
+                log_debug( 'get_search_timeline_info(): json=', json );
+                
+                let modules = json.modules;
+                
+                if ( ! Array.isArray( modules ) ) {
+                    return {
+                        json : json,
+                        error : 'result JSON structure error',
+                    };
+                }
+                
+                if ( modules.length < 1 ) {
+                    log_debug( `get_search_timeline_info(): retry_count=${retry_count} => modules.length=${modules.length}, json=`, json );
+                    continue;
+                }
+                
+                tweet_info_list = modules.map( ( module ) => {
                     let tweet;
                     
                     try {
@@ -887,6 +957,9 @@ const
                     
                     return self.get_tweet_info_from_tweet_status( tweet );
                 } ).filter( tweet_info => tweet_info );
+                
+                break;
+            }
             
             return  {
                 json : json,
@@ -1063,8 +1136,15 @@ const
                 }
                 
                 let tweet_id = entry.content.item.content.tweet.id,
-                    tweet_status = tweet_status_map[ tweet_id ],
-                    user = tweet_status.user = user_map[ tweet_status.user_id_str ],
+                    tweet_status = tweet_status_map[ tweet_id ];
+                
+                if ( ! tweet_status ) {
+                    // 既に削除されたツイートのIDが入ってくる場合がある模様
+                    log_info( 'Tweet information not found: tweet_id=', tweet_id );
+                    return;
+                }
+                
+                let user = tweet_status.user = user_map[ tweet_status.user_id_str ],
                     reacted_info = self.get_tweet_info_from_tweet_status( tweet_status );
                 
                 reacted_info.type = REACTION_TYPE.like;
@@ -1158,8 +1238,15 @@ const
                 }
                 
                 let tweet_id = entry.content.item.content.tweet.id,
-                    tweet_status = tweet_status_map[ tweet_id ],
-                    user = tweet_status.user = user_map[ tweet_status.user_id_str ],
+                    tweet_status = tweet_status_map[ tweet_id ];
+                
+                if ( ! tweet_status ) {
+                    // 既に削除されたツイートのIDが入ってくる場合がある模様
+                    log_info( 'Tweet information not found: tweet_id=', tweet_id );
+                    return;
+                }
+                
+                let user = tweet_status.user = user_map[ tweet_status.user_id_str ],
                     reacted_info = self.get_tweet_info_from_tweet_status( tweet_status );
                 
                 reacted_info.type = REACTION_TYPE.bookmark;
@@ -1187,6 +1274,96 @@ const
                 }
             };
         } // end of get_bookmarks_timeline_info()
+        
+        async get_media_timeline_info( options ) {
+            const
+                self = this;
+            
+            log_debug( 'get_media_timeline_info() called', options );
+            
+            if ( ! options ) {
+                options = {};
+            }
+            
+            let user_id = options.user_id,
+                screen_name = options.screen_name,
+                user_name = options.user_name,
+                user_icon = options.user_icon,
+                cursor = options.cursor,
+                count = options.count,
+                json = await TWITTER_API.fetch_media_timeline( user_id, cursor, count ).catch( ( error ) => {
+                    log_error( 'TWITTER_API.fetch_media_timeline() error:', error );
+                    return null;
+                } );
+            
+            if ( ! json ) {
+                return {
+                    json : null,
+                    error : 'fetch error',
+                };
+            }
+            
+            log_debug( 'get_media_timeline_info(): json=', json );
+            
+            if ( ( ! json.globalObjects ) || ( ! json.timeline ) ) {
+                return {
+                    json : json,
+                    error : json.errors,
+                };
+            }
+            
+            let tweet_status_map = json.globalObjects.tweets,
+                user_map = json.globalObjects.users,
+                entries = json.timeline.instructions[0].addEntries.entries,
+                cursor_info = {},
+                tweet_info_list = [];
+            
+            entries.map( ( entry ) => {
+                let id = entry.sortIndex,
+                    date = convert_like_id_to_date( id ),
+                    datetime = format_date( date, 'YYYY/MM/DD hh:mm:ss' ),
+                    timestamp_ms = date.getTime();
+                
+                if ( entry.entryId.match( /^cursor-(top|bottom)-(\d+)$/ ) ) {
+                    cursor_info[ RegExp.$1 ] = {
+                        id,
+                        timestamp_ms,
+                        date,
+                        datetime,
+                        cursor : entry.content.operation.cursor,
+                    };
+                    return;
+                }
+                
+                if ( ! entry.entryId.match( /^tweet-(\d+)$/ ) ) {
+                    return;
+                }
+                
+                let tweet_id = entry.content.item.content.tweet.id,
+                    tweet_status = tweet_status_map[ tweet_id ];
+                
+                if ( ! tweet_status ) {
+                    // 既に削除されたツイートのIDが入ってくる場合がある模様
+                    log_info( 'Tweet information not found: tweet_id=', tweet_id );
+                    return;
+                }
+                
+                let user = tweet_status.user = user_map[ tweet_status.user_id_str ],
+                    tweet_info = self.get_tweet_info_from_tweet_status( tweet_status );
+                
+                tweet_info_list.push( tweet_info );
+            } );
+            
+            log_debug( 'get_media_timeline_info(): tweet_info_list:', tweet_info_list, 'cursor_info:', cursor_info );
+            
+            return {
+                json : json,
+                timeline_info : {
+                    cursor_info : cursor_info,
+                    tweet_info_list : tweet_info_list,
+                }
+            };
+        } // end of get_media_timeline_info()
         
         get_tweet_info_from_tweet_status( tweet_status ) {
             const
@@ -1296,13 +1473,14 @@ const
                     timestamp_ms,
                     date,
                     datetime,
-                    text : tweet_status.full_text,
+                    //text : tweet_status.full_text,
+                    text : self.convert_tweet_text_from_tweet_status( tweet_status ),
                     media_type : ( 0 < media_list.length ) ? media_list[ 0 ].media_type : MEDIA_TYPE.nomedia,
                     media_list,
                     reply_count : tweet_status.reply_count,
                     retweet_count : tweet_status.retweet_count,
                     like_count : tweet_status.favorite_count,
-                    tweet_url : 'https://twitter.com/' + user.screen_name + '/status/' + tweet_status.id_str,
+                    tweet_url : 'https://x.com/' + user.screen_name + '/status/' + tweet_status.id_str,
                 } );
             }
             catch ( error ) {
@@ -1312,6 +1490,27 @@ const
             return tweet_info;
         } // end of get_basic_tweet_info()
         
+        convert_tweet_text_from_tweet_status( tweet_status ) {
+            let tweet_text = tweet_status.full_text;
+            
+            try {
+                let tweet_parts = Array.from( tweet_text ),
+                    url_infos = ( tweet_status.entities || {} ).urls || [];
+                
+                url_infos.map( ( url_info ) => {
+                    tweet_parts[ url_info.indices[ 0 ] ] = url_info.expanded_url;
+                    for ( let index = url_info.indices[ 0 ] + 1; index < url_info.indices[ 1 ]; index ++ ) {
+                        tweet_parts[ index ] = '';
+                    }
+                } );
+                tweet_text = tweet_parts.join( '' );
+            }
+            catch ( error ) {
+                log_debug( 'failed to convert the tweet text:', error, tweet_status );
+            }
+            return tweet_text;
+        } // end of convert_tweet_text_from_tweet_status()
+        
         get_media_list_from_tweet_status( tweet_status ) {
             let source_media_infos = [];
             
@@ -1320,6 +1519,16 @@ const
             }
             else if ( tweet_status.entities && tweet_status.entities.media ) {
                 source_media_infos = tweet_status.entities.media;
+            }
+            else {
+                try {
+                    let unified_card_info = JSON.parse( tweet_status.card.binding_values.unified_card.string_value );
+                    
+                    source_media_infos = [ unified_card_info.media_entities[ unified_card_info.component_objects.media_1.data.id ] ];
+                }
+                catch ( error ) {
+                    source_media_infos = [];
+                }
             }
             
             return source_media_infos.map( ( source_media_info ) => {
@@ -1379,8 +1588,8 @@ const
             let max_tweet_id = self.requested_max_tweet_id = self.max_tweet_id = parameters.max_tweet_id,
                 max_timestamp_ms = self.requested_max_timestamp_ms = self.max_timestamp_ms = parameters.max_timestamp_ms;
             
-            if ( ! max_tweet_id ) {
-                self.max_tweet_id = convert_utc_msec_to_tweet_id( max_timestamp_ms );
+            if ( ( ! max_tweet_id ) && ( ! max_timestamp_ms ) ) {
+                self.max_tweet_id = convert_utc_msec_to_tweet_id( Date.now() );
             }
             
             let filter_info = self.filter_info = parameters.filter_info || {},
@@ -1389,9 +1598,10 @@ const
                 //  .gif : GIFフィルタコマンド使用(true/false)
                 //  .video : VIDEOフィルタコマンド使用(true/false)
                 //  .nomedia : メディアなしツイート含む(true/false) ※ true 時は .use_media_filter 無効
+                //  .include_retweets : リツイートを含む
                 filters = [];
             
-            if ( ! filter_info.nomedia ) {
+            if ( filter_info.use_media_filter && ( ! filter_info.nomedia ) ) {
                 if ( filter_info.image ) {
                     filters.push( 'filter:images' );
                 }
@@ -1401,7 +1611,7 @@ const
                 if ( filter_info.video ) {
                     //filters.push( 'filter:videos' );
                     filters.push( 'filter:native_video' );
-                    filters.push( 'filter:vine' );
+                    //filters.push( 'filter:vine' );
                 }
             }
             self.filter_string = filters.join( ' OR ' );
@@ -1536,11 +1746,17 @@ const
             super( parameters );
             
             const
-                self = this;
+                self = this,
+                filter_info = self.filter_info;
             
-            self.timeline_type = TIMELINE_TYPE.user;
-            
-            self.set_fetch_tweets_function( TIMELINE_TYPE.user, self.fetch_tweets_from_user_timeline );
+            if ( ( filter_info.image || filter_info.gif || filter_info.video ) && ( ! ( filter_info.nomedia || filter_info.include_retweets ) ) ) {
+                self.timeline_type = TIMELINE_TYPE.media;
+                self.set_fetch_tweets_function( self.timeline_type, self.fetch_tweets_from_media_timeline  );
+            }
+            else {
+                self.timeline_type = TIMELINE_TYPE.user;
+                self.set_fetch_tweets_function( self.timeline_type, self.fetch_tweets_from_user_timeline );
+            }
             self.set_fetch_tweets_function( TIMELINE_TYPE.search, self.fetch_tweets_from_search_timeline );
             
             parameters = self.parameters;
@@ -1550,8 +1766,28 @@ const
                 screen_name = self.screen_name = parameters.screen_name;
             
             if ( ( ! max_tweet_id ) && ( max_timestamp_ms ) ) {
+                max_tweet_id = self.max_tweet_id = convert_utc_msec_to_tweet_id( max_timestamp_ms );
+                
+                if ( max_tweet_id === ID_THRESHOLD ) {
+                    max_tweet_id = self.max_tweet_id = null;
+                }
+            }
+            
+            if ( ! max_tweet_id ) {
                 self.api_type_in_use = API_TYPE_IN_USE.search;
             }
+            
+            let cursor = self.cursor = parameters.cursor;
+            
+            if ( ( ! cursor ) && max_tweet_id ) {
+                // TODO: cursor は 'HBaAwKDV1Mb19yMAAA==' のような値であり、開始時刻をどのように置き換えればよいかがわからない
+                // →独自に解析し、Tweet ID→cursor 値へと変換できるように試みている
+                cursor = self.cursor = create_likes_cursor( max_tweet_id );
+                log_debug( 'create tweet-id cursor:', cursor, 'max_tweet_id:', max_tweet_id );
+            }
+            
+            self.last_cursor = null;
+            self.user_info = null;
             
             self.query_base = 'from:' + screen_name + ' include:retweets include:nativeretweets'
             
@@ -1590,6 +1826,50 @@ const
             self.tweet_info_list = self.tweet_info_list.concat( tweet_info_list );
             self.max_tweet_id = new Decimal( tweet_info_list[ tweet_info_list.length - 1 ].id ).sub( 1 ).toString();
         } // end of fetch_tweets_from_user_timeline()
+        
+        async fetch_tweets_from_media_timeline() {
+            const
+                self = this;
+            
+            let user_info = self.user_info;
+            
+            if ( ! user_info ) {
+                user_info = self.user_info = await TWITTER_API.get_user_info( { user_id : self.user_id, screen_name : self.screen_name } );
+            }
+            
+            self.last_cursor = self.cursor;
+            
+            let result = self.last_result = await TIMELINE_TOOLBOX.get_media_timeline_info( {
+                    user_id : user_info.id_str,
+                    screen_name : user_info.screen_name,
+                    user_name : user_info.name,
+                    user_icon : user_info.profile_image_url_https,
+                    cursor : self.cursor,
+                    count : TWITTER_API.definition( TIMELINE_TYPE.media ).tweet_number.limit,
+                } ).catch( ( error ) => {
+                    log_error( 'TIMELINE_TOOLBOX.get_media_timeline_info():', error );
+                    self.last_error = error;
+                    return null;
+                } );
+            
+            if ( ( ! result ) || ( ! result.timeline_info ) ) {
+                log_error( 'unknown result:', result );
+                self.timeline_status = TIMELINE_STATUS.error;
+                return;
+            }
+            
+            let cursor_info = result.timeline_info.cursor_info,
+                tweet_info_list = result.timeline_info.tweet_info_list;
+            
+            if ( ( tweet_info_list.length <= 0 ) || ( ! cursor_info.bottom ) ) {
+                self.api_type_in_use = API_TYPE_IN_USE.search;
+                return;
+            }
+            
+            self.tweet_info_list = self.tweet_info_list.concat( tweet_info_list );
+            self.max_tweet_id = new Decimal( tweet_info_list[ tweet_info_list.length - 1 ].id ).sub( 1 ).toString();
+            self.cursor = cursor_info.bottom.cursor.value;
+        } // end of fetch_tweets_from_media_timeline()
         
         async fetch_tweets_from_search_timeline() {
             const
@@ -1638,10 +1918,14 @@ const
                 max_timestamp_ms = self.max_timestamp_ms,
                 filter_info = self.filter_info,
                 specified_query = self.specified_query = parameters.specified_query || '',
+                keep_since = self.keep_since = !! parameters.keep_since,
                 query_base = specified_query;
             
             // 期間指定コマンドの削除
-            query_base = query_base.replace( /-?(?:since|until|since_id|max_id):[^\s]+(?:\s+OR\s+)?/g, ' ' );
+            query_base = query_base.replace( /-?(?:until|max_id):[^\s]+(?:\s+OR\s+)?/g, ' ' );
+            if ( ! keep_since ) {
+                query_base = query_base.replace( /-?(?:since|since_id):[^\s]+(?:\s+OR\s+)?/g, ' ' );
+            }
             
             if ( filter_info.use_media_filter ) {
                 // 本スクリプトと競合するフィルタの削除
@@ -1676,7 +1960,6 @@ const
                 self.timeline_status = TIMELINE_STATUS.error;
                 return;
             }
-            
             let tweet_info_list = result.timeline_info.tweet_info_list;
             
             if ( tweet_info_list.length <= 0 ) {

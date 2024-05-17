@@ -49,7 +49,7 @@ Usage
 ```JavaScript
 Twitter
 .initialize( {
-    // Use parameters described on your [Twitter Application Management](https://apps.twitter.com/).
+    // Use parameters described on your [Twitter Application Management](https://apps.x.com/).
     consumer_key : 'Your "Consumer Key"',
     consumer_secret : 'Your "Consumer Secret"',
     callback_url : 'Your "Callback URL"',
@@ -60,12 +60,12 @@ Twitter
 ```JavaScript
 Twitter
 .initialize( {
-    // Use parameters described on your [Twitter Application Management](https://apps.twitter.com/).
+    // Use parameters described on your [Twitter Application Management](https://apps.x.com/).
     consumer_key : 'Your "Consumer Key"',
     consumer_secret : 'Your "Consumer Secret"',
     callback_url : 'Your "Callback URL"',
     
-    // Since you cannot inject scripts on pages such as [authorization page](https://api.twitter.com/oauth/*) and [login verification page](https://twitter.com/account/login_verification), 
+    // Since you cannot inject scripts on pages such as [authorization page](https://api.x.com/oauth/*) and [login verification page](https://x.com/account/login_verification), 
     // disable healthcheck.
     popup_healthcheck_interval : 0,
 } );
@@ -96,7 +96,7 @@ Twitter
 });
 ```
 
-### In the popup window ([authorization page](https://api.twitter.com/oauth/*), [login verification page](https://twitter.com/account/login_verification) and your callback page)
+### In the popup window ([authorization page](https://api.x.com/oauth/*), [login verification page](https://x.com/account/login_verification) and your callback page)
 
 ```JavaScript
 Twitter.initialize();
@@ -416,7 +416,7 @@ var set_values = ( function () {
         }
         catch ( error ) {
             log_error( 'get_origin()', url, error );
-            return 'https://api.twitter.com';
+            return 'https://api.x.com';
         }
     }; // end of get_origin()
 
@@ -426,8 +426,8 @@ var TemplateTwitterAPI = {
     
     config : {
         api_version : '1.1',
-        api_url_base : 'https://api.twitter.com',
-        login_verification_url : 'https://twitter.com/account/login_verification',
+        api_url_base : 'https://api.x.com',
+        login_verification_url : 'https://x.com/account/login_verification',
         
         consumer_key : '',
         consumer_secret : '',

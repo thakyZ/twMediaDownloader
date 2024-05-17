@@ -5,8 +5,8 @@ Twitter メディアダウンローダ (twMediaDownloader)
 - Copyright (c) 2016 風柳(furyu)  
 - 対象ブラウザ： Google Chrome、Firefox
 
-[Web 版公式 Twitter](https://twitter.com/) のメディア（画像／動画）を、原寸サイズでダウンロードするためのスクリプト。  
-※個別ツイートのメディアダウンロードについては、[TweetDeck](https://tweetdeck.twitter.com/) でも対応。  
+[Web 版公式 Twitter](https://x.com/) のメディア（画像／動画）を、原寸サイズでダウンロードするためのスクリプト。  
+※個別ツイートのメディアダウンロードについては、[TweetDeck](https://tweetdeck.x.com/) でも対応。  
 
 
 ■ インストール方法 
@@ -30,11 +30,11 @@ Firefox Quantum で、
 ### ユーザースクリプト版
 Firefox＋<s>[Greasemonkey](https://addons.mozilla.org/ja/firefox/addon/greasemonkey/)</s>[Tampermonkey](https://addons.mozilla.org/ja/firefox/addon/tampermonkey/)、Google Chrome＋[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=ja) の環境で、  
 
-> [Twitter Media Downloader for new Twitter.com 2019](http://furyutei.github.io/twMediaDownloader/src/js/main_react.user.js)  
+> [Twitter Media Downloader for new x.com 2019](http://furyutei.github.io/twMediaDownloader/src/js/main_react.user.js)  
 
 > [Twitter Media Downloader for TweetDeck](http://furyutei.github.io/twMediaDownloader/src/js/main_tweetdeck.user.js)  
 
-> [Twitter Media Downloader for old Twitter.com (twMediaDownloader.user.js)](https://furyutei.work/userjs/furyutei/twMediaDownloader.user.js)  
+> [Twitter Media Downloader for old x.com (twMediaDownloader.user.js)](https://furyutei.work/userjs/furyutei/twMediaDownloader.user.js)  
                                 
 をクリックし、指示に従ってインストール。  
 ※ Firefox では Quantum(57) + Greasemonkey 4 より動作しなくなった（代わりに Tampermonkey を使用すること）。  
@@ -42,7 +42,7 @@ Firefox＋<s>[Greasemonkey](https://addons.mozilla.org/ja/firefox/addon/greasemo
 
 ■ 使い方
 ---
-[Web 版公式 Twitter](https://twitter.com/) 上で、ユーザータイムラインや検索タイムラインを開くと、「メディア↓」のようなリンクが挿入される。  
+[Web 版公式 Twitter](https://x.com/) 上で、ユーザータイムラインや検索タイムラインを開くと、「メディア↓」のようなリンクが挿入される。  
 ![下向き矢印のリンク](https://cdn-ak.f.st-hatena.com/images/fotolife/f/furyu-tei/20160723/20160723224518.jpg)  
 
 これをクリックするとダイアログが表示されるので、[開始]ボタンをクリックすると、原寸画像/動画の ZIP 化が開始される。  

@@ -41,6 +41,15 @@
 ,   "VIDEO_DOWNLOAD_LINK" : {
         "message" : "Video Download Buttons"
     }
+,   "DOWNLOAD_LINK" : {
+        "message" : "Download Buttons"
+    }
+,   "IMAGE" : {
+        "message" : "Image"
+    }
+,   "VIDEO" : {
+        "message" : "Video"
+    }
 ,   "ENABLE_ZIPREQUEST" : {
         "message" : "Zip in background (for performance)"
     }
@@ -85,5 +94,14 @@
     }
 ,   "AUTO_CONTINUE" : {
         "message" : "Automatic continuation after download limit is reached"
+    }
+,   "DOMATION" : {
+        "message" : "Your donation is welcome !"
+    }
+,   "BULK_DOWNLOAD" : {
+        "message" : "Bulk Download"
+    }
+,   "BULK_DOWNLOAD_LIKES" : {
+        "message" : "Download \"Likes\" in bulk"
     }
 }

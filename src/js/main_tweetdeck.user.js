@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name            Twitter Media Downloader for TweetDeck
 // @description     Download media files on TweetDeck.
-// @version         0.1.4.8
+// @version         0.1.5.0
 // @namespace       https://memo.furyutei.work/
 // @author          furyu
-// @include         https://tweetdeck.twitter.com/*
+// @include         https://tweetdeck.x.com/*
 // @grant           GM_xmlhttpRequest
 // @grant           GM_setValue
 // @grant           GM_getValue
 // @grant           GM_deleteValue
-// @connect         twitter.com
+// @connect         x.com
 // @connect         twimg.com
 // @connect         cdn.vine.co
 // @require         https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
@@ -107,7 +107,7 @@ var OPTIONS = {
     DEFAULT_INCLUDE_RETWEETS : false, // true: RTを含む
     DEFAULT_SUPPORT_NOMEDIA : false, // false: メディアを含まないツイートもログ・CSVやCSVに記録する
     DEFAULT_DRY_RUN : false, // true: 走査のみ
-    ENABLE_ZIPREQUEST : true, // true: ZipRequest を使用してバックグラウンドでダウンロード＆アーカイブ(拡張機能の場合)
+    ENABLE_ZIPREQUEST : false, // true: ZipRequest を使用してバックグラウンドでダウンロード＆アーカイブ(拡張機能の場合)
     INCOGNITO_MODE : false, // true: 秘匿モード（シークレットウィンドウ内で起動・拡張機能の場合のみ）
     // TODO: Firefox でシークレットウィンドウ内で実行する場合、ENABLE_ZIPREQUEST が true だと zip_request.generate() で失敗
     // → 暫定的に、判別して ZipRequest を使用しないようにする
@@ -117,7 +117,7 @@ var OPTIONS = {
     // /statuses/show.json の場合、15分で900回（正確に 900回／15分というわけではなく、15分毎にリセットされる）→1秒以上は空けておく
     // TODO: 別のタブで並列して実行されている場合や、別ブラウザでの実行は考慮していない
     TWITTER_API2_DELAY_TIME_MS : 5100, // Twitter API2 コール時、前回からの最小間隔(ms)
-    // ※ api.twitter.com/2/timeline/conversation/:id の場合、15分で180回
+    // ※ api.x.com/2/timeline/conversation/:id の場合、15分で180回
     // TODO: 別のタブで並列して実行されている場合や、別ブラウザでの実行は考慮していない
 };
 
@@ -129,12 +129,19 @@ var SCRIPT_NAME = 'twMediaDownloader',
     IS_CHROME_EXTENSION = !! ( w.is_chrome_extension ),
     DEBUG = false;
 
-if ( ( typeof jQuery != 'function' ) || ( ( typeof JSZip != 'function' ) && ( typeof ZipRequest != 'function' ) ) || ( typeof Decimal != 'function' ) ) {
-    if ( w === w.top ) {
-        console.error( SCRIPT_NAME + '(' + location.href + '):', 'Library not found - ', 'jQuery:', typeof jQuery, 'JSZip:', typeof JSZip, 'ZipRequest:', typeof ZipRequest, 'Decimal:', typeof Decimal );
+[ 'jQuery', 'JSZip', 'Decimal' ].map( ( library_name ) => {
+    if ( typeof window[ library_name ] ) {
+        return;
     }
-    return;
-}
+    
+    const
+        message = SCRIPT_NAME + '(' + location.href + '): Library not found - ' +  library_name;
+    
+    if ( w === w.top ) {
+        console.error( message );
+    }
+    throw new Error( message );
+} );
 
 if ( ! IS_CHROME_EXTENSION ) {
     Object.assign( w, {
@@ -594,7 +601,8 @@ function update_display_mode() {
 
 
 var fetch_api_json = ( () => {
-    var api_authorization_bearer = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+    var api_authorization_bearer = 'AAAAAAAAAAAAAAAAAAAAAF7aAAAAAAAASCiRjWvh7R5wxaKkFp7MM%2BhYBqM%3DbQ0JPmjU9F6ZoMhDfI4uTNAaQuTDm2uO9x3WFVr2xBZ2nhjdP0',
+        api2_authorization_bearer = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
         
         get_api_csrf_token = () => {
             var csrf_token;
@@ -608,9 +616,9 @@ var fetch_api_json = ( () => {
             return csrf_token;
         }, // end of get_api_csrf_token()
         
-        create_api_header = () => {
+        create_api_header = ( api_url ) => {
             return {
-                'authorization' : 'Bearer ' + api_authorization_bearer,
+                'authorization' : 'Bearer ' + ( ( ( api_url || '' ).indexOf( '/2/' ) < 0 ) ? api_authorization_bearer : api2_authorization_bearer ),
                 'x-csrf-token' : get_api_csrf_token(),
                 'x-twitter-active-user' : 'yes',
                 'x-twitter-auth-type' : 'OAuth2Session',
@@ -629,7 +637,7 @@ var fetch_api_json = ( () => {
             }
             
             /*
-            // mobile.twitter.com 等から api.twitter.com を呼ぶと、
+            // mobile.x.com 等から api.x.com を呼ぶと、
             // > Cross-Origin Read Blocking (CORB) blocked cross-origin response <url> with MIME type application/json. See https://www.chromestatus.com/feature/5629709824032768 for more details.
             // のような警告が出て、レスポンスボディが空になってしまう
             // 参考：
@@ -659,7 +667,7 @@ var fetch_api_json = ( () => {
         fetch_api_json = ( api_url ) => {
             return fetch_json( api_url, {
                 method : 'GET',
-                headers : create_api_header(),
+                headers : create_api_header( api_url ),
                 mode: 'cors',
                 credentials: 'include',
             } );
@@ -670,8 +678,8 @@ var fetch_api_json = ( () => {
 
 
 var fetch_tweet_video_url = ( () => {
-    //var api_tweet_show_template = 'https://api.twitter.com/1.1/statuses/show.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&trim_user=false&include_ext_media_color=true&id=#TWEETID#';
-    var api2_conversation_template = 'https://api.twitter.com/2/timeline/conversation/#TWEETID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&count=20&ext=mediaStats%2ChighlightedLabel%2CcameraMoment';
+    //var api_tweet_show_template = 'https://api.x.com/1.1/statuses/show.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&trim_user=false&include_ext_media_color=true&id=#TWEETID#';
+    var api2_conversation_template = 'https://api.x.com/2/timeline/conversation/#TWEETID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&count=20&ext=mediaStats%2ChighlightedLabel%2CcameraMoment';
     
     return ( tweet_id ) => {
         //var api_url = api_tweet_show_template.replace( /#TWEETID#/g, tweet_id );
@@ -899,10 +907,12 @@ var add_media_button_to_tweet = ( () => {
                     background_image;
                 
                 try {
-                    //background_image = $element.css( 'background-image' ); // style="background-image: url()" のとき、'url("https://tweetdeck.twitter.com/")' が返されてしまう
+                    //background_image = $element.css( 'background-image' ); // style="background-image: url()" のとき、'url("https://tweetdeck.x.com/")' が返されてしまう
                     background_image = $element.get( 0 ).style.backgroundImage;
-                    thumbnail_url = background_image.match( reg_url )[ 1 ].trim();
-                    
+                    thumbnail_url = $element.find( 'img.media-img' ).attr( 'src' );
+                    if ( ! thumbnail_url ) {
+                        thumbnail_url = background_image.match( reg_url )[ 1 ].trim();
+                    }
                     if ( ! thumbnail_url ) {
                         log_info( '* get_thumbnail_url() thumbnail-URL is empty * background-image:', background_image, 'tweet_id:', tweet_id );
                         // TODO: GIF動画などで、タイミングによっては style="background-image: url()" となるケース有り
@@ -997,7 +1007,17 @@ var add_media_button_to_tweet = ( () => {
                         case 'gif' :
                             $media_container.find( '.js-media-gif-container, a.js-media-image-link[rel="mediaPreview"]' ).each( function () {
                                 var $element = $( this ),
-                                    thumbnail_url = get_thumbnail_url( $element, tweet_id );
+                                    media_url;
+                                
+                                if ( $element.prop( 'tagName' ) == 'VIDEO' ) {
+                                    media_url = $element.attr( 'src' );
+                                    if ( media_url ) {
+                                        media_urls.push( media_url );
+                                        return;
+                                    }
+                                }
+                                
+                                var thumbnail_url = get_thumbnail_url( $element, tweet_id );
                                 
                                 if ( ! thumbnail_url ) {
                                     return;
@@ -1005,7 +1025,7 @@ var add_media_button_to_tweet = ( () => {
                                 
                                 thumbnail_urls.push( thumbnail_url );
                                 
-                                var media_url = get_gif_video_url_from_thumbnail_url( thumbnail_url );
+                                media_url = get_gif_video_url_from_thumbnail_url( thumbnail_url );
                                 
                                 if ( ! media_url ) {
                                     return;
@@ -1013,7 +1033,7 @@ var add_media_button_to_tweet = ( () => {
                                 media_urls.push( media_url );
                             } );
                             
-                            if ( thumbnail_urls.length <= 0 ) {
+                            if ( ( thumbnail_urls.length <= 0 ) && ( media_urls.length <= 0 ) ) {
                                 media_type = 'none';
                             }
                             break;
@@ -1021,7 +1041,18 @@ var add_media_button_to_tweet = ( () => {
                         case 'video' :
                             $media_container.find( '.js-media-native-video, a.js-media-image-link[rel="mediaPreview"]' ).each( function () {
                                 var $element = $( this ),
-                                    thumbnail_url = get_thumbnail_url( $element, tweet_id );
+                                    media_url;
+                                
+                                if ( $element.prop( 'tagName' ) == 'VIDEO' ) {
+                                    // 2021/05: 最初からVIDEOタグが含まれるパターンがあることに気付く
+                                    media_url = $element.attr( 'src' );
+                                    if ( media_url ) {
+                                        media_urls.push( media_url );
+                                        return;
+                                    }
+                                }
+                                
+                                var thumbnail_url = get_thumbnail_url( $element, tweet_id );
                                 
                                 if ( ! thumbnail_url ) {
                                     return;
@@ -1030,7 +1061,7 @@ var add_media_button_to_tweet = ( () => {
                                 thumbnail_urls.push( thumbnail_url );
                             } );
                             
-                            if ( thumbnail_urls.length <= 0 ) {
+                            if ( ( thumbnail_urls.length <= 0 ) && ( media_urls.length <= 0 ) ) {
                                 if ( $media_container.find( 'iframe.js-media-native-video' ).length <= 0 ) {
                                     media_type = 'none';
                                 }

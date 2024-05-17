@@ -4,14 +4,14 @@
 // @version         0.1.4.1
 // @namespace       http://furyu.hatenablog.com/
 // @author          furyu
-// @include         https://twitter.com/*
-// @include         https://api.twitter.com/*
+// @include         https://x.com/*
+// @include         https://api.x.com/*
 // @include         https://nazo.furyutei.work/oauth/*
 // @grant           GM_xmlhttpRequest
 // @grant           GM_setValue
 // @grant           GM_getValue
 // @grant           GM_deleteValue
-// @connect         twitter.com
+// @connect         x.com
 // @connect         twimg.com
 // @connect         cdn.vine.co
 // @require         https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
@@ -123,7 +123,7 @@ var OPTIONS = {
     // TODO: 別のタブで並列して実行されている場合や、別ブラウザでの実行は考慮していない
 
 ,   TWITTER_API2_DELAY_TIME_MS : 5100 // Twitter API2 コール時、前回からの最小間隔(ms)
-    // ※ api.twitter.com/2/timeline/conversation/:id の場合、15分で180回
+    // ※ api.x.com/2/timeline/conversation/:id の場合、15分で180回
     // TODO: 別のタブで並列して実行されている場合や、別ブラウザでの実行は考慮していない
 };
 
@@ -134,7 +134,7 @@ var OPTIONS = {
 var SCRIPT_NAME = 'twMediaDownloader',
     IS_CHROME_EXTENSION = !! ( w.is_chrome_extension ),
     OAUTH_POPUP_WINDOW_NAME = SCRIPT_NAME + '-OAuthAuthorization',
-    DEBUG = false;
+    DEBUG = true;
 
 
 if ( d.querySelector( 'div#react-root' ) ) {
@@ -148,7 +148,7 @@ if ( d.querySelector( 'div#react-root' ) ) {
     return;
 }
 
-if ( ! /^https:\/\/twitter\.com(?!\/account\/login_verification)/.test( w.location.href ) ) {
+if ( ! /^https:\/\/x\.com(?!\/account\/login_verification)/.test( w.location.href ) ) {
     if ( ( ! IS_CHROME_EXTENSION ) && ( typeof Twitter != 'undefined' ) ) {
         // Twitter OAuth 認証用ポップアップとして起動した場合は、Twitter.initialize() により tokens 取得用処理を実施（内部でTwitter.initializePopupWindow()を呼び出し）
         // ※ユーザースクリプトでの処理（拡張機能の場合、session.jsにて実施）
@@ -159,8 +159,8 @@ if ( ! /^https:\/\/twitter\.com(?!\/account\/login_verification)/.test( w.locati
     return;
 }
 
-if ( /^https:\/\/twitter\.com\/i\/cards/.test( w.location.href ) ) {
-    // https://twitter.com/i/cards/～ では実行しない
+if ( /^https:\/\/x\.com\/i\/cards/.test( w.location.href ) ) {
+    // https://x.com/i/cards/～ では実行しない
     return;
 }
 
@@ -228,9 +228,9 @@ var LANGUAGE = ( function () {
     //     「セキュリティ」→「詐欺コンテンツと危険なソフトウェアからの防護」にある、
     //     「☑不要な危険ソフトウェアを警告する(C)」のチェックを外す
     
-    API_RATE_LIMIT_STATUS = 'https://api.twitter.com/1.1/application/rate_limit_status.json',
-    API_VIDEO_CONFIG_BASE = 'https://api.twitter.com/1.1/videos/tweet/config/#TWEETID#.json',
-    API_TWEET_SHOW_BASE = 'https://api.twitter.com/1.1/statuses/show.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&trim_user=false&include_ext_media_color=true&id=#TWEETID#',
+    API_RATE_LIMIT_STATUS = 'https://api.x.com/1.1/application/rate_limit_status.json',
+    API_VIDEO_CONFIG_BASE = 'https://api.x.com/1.1/videos/tweet/config/#TWEETID#.json',
+    API_TWEET_SHOW_BASE = 'https://api.x.com/1.1/statuses/show.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&trim_user=false&include_ext_media_color=true&id=#TWEETID#',
     GIF_VIDEO_URL_BASE = 'https://video.twimg.com/tweet_video/#VIDEO_ID#.mp4',
     
     LOADING_IMAGE_URL = 'https://abs.twimg.com/a/1460504487/img/t1/spinner-rosetta-gray-32x32.gif',
@@ -612,7 +612,7 @@ function get_img_url( img_url, kind ) {
 
 
 function get_img_url_orig( img_url ) {
-    if ( /^https?:\/\/ton\.twitter\.com\//.test( img_url ) ) {
+    if ( /^https?:\/\/ton\.x\.com\//.test( img_url ) ) {
         // DM の画像は :orig が付かないものが最大
         return get_img_url( img_url );
     }
@@ -700,7 +700,7 @@ function get_screen_name( url ) {
     }
     
     if ( screen_name.length < 2 ) {
-        // ログイン時に『いいね』タイムラインは https://twitter.com/i/likes になってしまう
+        // ログイン時に『いいね』タイムラインは https://x.com/i/likes になってしまう
         screen_name = $( 'h2.ProfileHeaderCard-screenname span.username b.u-linkComplex-target' ).text().trim();
     }
     
@@ -725,7 +725,7 @@ function get_tweet_id( url ) {
     
     url = url.trim();
     
-    if ( url.match( /^https?:\/\/twitter\.com\/[^\/]+\/[^\/]+\/(\d+)(?:$|\/)/ ) ) {
+    if ( url.match( /^https?:\/\/x\.com\/[^\/]+\/[^\/]+\/(\d+)(?:$|\/)/ ) ) {
         return RegExp.$1;
     }
     
@@ -967,7 +967,7 @@ var [
         API2_AUTHORIZATION_BEARER = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
         // ※ https://abs.twimg.com/responsive-web/web/main.<version>.js (例：https://abs.twimg.com/responsive-web/web/main.bd8d7749ae1a70054.js) 内で定義されている値
         // TODO: 継続して使えるかどうか不明→変更された場合の対応を要検討
-        API2_CONVERSATION_BASE = 'https://api.twitter.com/2/timeline/conversation/#TWEETID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&count=20&ext=mediaStats%2ChighlightedLabel%2CcameraMoment',
+        API2_CONVERSATION_BASE = 'https://api.x.com/2/timeline/conversation/#TWEETID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&count=20&ext=mediaStats%2ChighlightedLabel%2CcameraMoment',
         
         twitter_api_1st_call = true,
         
@@ -1003,15 +1003,15 @@ var [
                     
                     api2_is_checked = true;
                     
-                    // API2 (api.twitter.com/2/) が有効かどうかをツイート（https://twitter.com/jack/status/20）を読みこんで確認
+                    // API2 (api.x.com/2/) が有効かどうかをツイート（https://x.com/jack/status/20）を読みこんで確認
                     var target_tweet_id = 20;
                     
                     api2_get_tweet_info( target_tweet_id )
                     .done( ( json, textStatus, jqXHR ) => {
-                        log_info( 'API2 (api.twitter.com/2/) is available.' );
+                        log_info( 'API2 (api.x.com/2/) is available.' );
                     } )
                     .fail( ( jqXHR, textStatus, errorThrown ) => {
-                        log_error( 'API2 (api.twitter.com/2/) is not available. (', jqXHR.statusText, ':', textStatus, ')' );
+                        log_error( 'API2 (api.x.com/2/) is not available. (', jqXHR.statusText, ':', textStatus, ')' );
                         
                         get_csrf_token = () => false; // API2 無効化
                     } )
@@ -1271,7 +1271,7 @@ var [
             }
             
             /*
-            // Chrome 拡張機能の場合 api.twitter.com を呼ぶと、
+            // Chrome 拡張機能の場合 api.x.com を呼ぶと、
             // > Cross-Origin Read Blocking (CORB) blocked cross-origin response <url> with MIME type application/json. See https://www.chromestatus.com/feature/5629709824032768 for more details.
             // のような警告が出て、レスポンスボディが空になってしまう
             // 参考：
@@ -1497,7 +1497,7 @@ var download_media_timeline = ( function () {
                         max_position : self.until_id
                         
                     ,   api_endpoint : {
-                            url : 'https://twitter.com/' + ( ( self.screen_name ) ? self.screen_name : 'twitter' ) + '/likes/timeline'
+                            url : 'https://x.com/' + ( ( self.screen_name ) ? self.screen_name : 'twitter' ) + '/likes/timeline'
                         ,   data : {
                                 include_available_features : 1
                             ,   include_entities : 1
@@ -1514,7 +1514,7 @@ var download_media_timeline = ( function () {
                         max_position : self.until_id
                         
                     ,   api_endpoint : {
-                            url : 'https://twitter.com/mentions/timeline'
+                            url : 'https://x.com/mentions/timeline'
                         ,   data : {
                                 include_available_features : 1
                             ,   include_entities : 1
@@ -1531,7 +1531,7 @@ var download_media_timeline = ( function () {
                         max_position : self.until_id
                         
                     ,   api_endpoint : {
-                            url : 'https://twitter.com/i/profiles/show/' + ( ( self.screen_name ) ? self.screen_name : 'twitter' ) + ( ( filter_info.include_retweets || filter_info.nomedia ) ? '/timeline/with_replies' : '/media_timeline' )
+                            url : 'https://x.com/i/profiles/show/' + ( ( self.screen_name ) ? self.screen_name : 'twitter' ) + ( ( filter_info.include_retweets || filter_info.nomedia ) ? '/timeline/with_replies' : '/media_timeline' )
                         ,   data : {
                                 include_available_features : 1
                             ,   include_entities : 1
@@ -1549,7 +1549,7 @@ var download_media_timeline = ( function () {
                     //    最初はわからないため、HTML より data-min-position を読み取って使用する
                 
                 ,   html_endpoint : {
-                        url : 'https://twitter.com/search'
+                        url : 'https://x.com/search'
                     ,   data : {
                             f : 'tweets'
                         ,   vertical : 'default'
@@ -1558,7 +1558,7 @@ var download_media_timeline = ( function () {
                         }
                     }
                 ,   api_endpoint : {
-                        url : 'https://twitter.com/i/search/timeline'
+                        url : 'https://x.com/i/search/timeline'
                     ,   data : {
                             f : 'tweets'
                         ,   vertical : 'default'
@@ -2073,7 +2073,7 @@ var download_media_timeline = ( function () {
                     return null;
                 }
                 if ( tweet_url.charAt( 0 ) == '/' ) {
-                    tweet_url = 'https://twitter.com' + tweet_url;
+                    tweet_url = 'https://x.com' + tweet_url;
                 }
                 
                 try {
@@ -2762,7 +2762,7 @@ var download_media_timeline = ( function () {
         ,   log : ( function () {
                 var reg_char_to_escape = /[&'`"<>]/g,
                     reg_url =  /(https?:\/\/[\w\/:%#$&?\(\)~.=+\-;]+)/g,
-                    reg_tweet_url = /\/\/twitter\.com/;
+                    reg_tweet_url = /\/\/x\.com/;
                 
                 function escape_html( match ) {
                     return {
@@ -3598,7 +3598,7 @@ var download_media_timeline = ( function () {
                                     media_type = current_tweet_info.media_type,
                                     img_extension = ( media_type == 'image' ) ? get_img_extension( image_url ) : get_video_extension( image_url ),
                                     media_prefix = ( media_type == 'gif' ) ? 'gif' : ( ( media_type == 'image' ) ? 'img' : 'vid' ),
-                                    is_api_url = /^https?:\/\/api\.twitter\.com\//.test( image_url ),
+                                    is_api_url = /^https?:\/\/api\.x\.com\//.test( image_url ),
                                     media_infos = current_tweet_info.media_infos[ index ],
                                     image_filename = media_infos.image_filename,
                                     media_url = ( is_api_url ) ? '-' : image_url;

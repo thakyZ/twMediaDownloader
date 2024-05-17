@@ -4,11 +4,16 @@
 
 w.chrome = ( ( typeof browser != 'undefined' ) && browser.runtime ) ? browser : chrome;
 
-
 var SCRIPT_NAME = 'twMediaDownloader',
-    DEBUG = false,
+    DEBUG = true,
+    MANIFEST_VERSION = chrome.runtime.getManifest().manifest_version,
     CONTENT_TAB_INFOS = {};
 
+/*
+//if ( 2 < MANIFEST_VERSION ) {
+//    importScripts( './jszip.min.js', './zip_worker.js' );
+//}
+*/
 
 function log_debug() {
     if ( ! DEBUG ) {
@@ -20,10 +25,6 @@ function log_debug() {
 function log_error() {
     console.error.apply( console, arguments );
 } // end of log_error()
-
-
-w.log_debug = log_debug;
-w.log_error = log_error;
 
 
 function get_values( name_list ) {
@@ -43,7 +44,7 @@ function get_values( name_list ) {
 /*
 //function reload_tabs() {
 //    chrome.tabs.query( {
-//        url : '*://*.twitter.com/*' // TODO: url で query() を呼ぶためには tabs permission が必要になる
+//        url : '*://*.x.com/*' // TODO: url で query() を呼ぶためには tabs permission が必要になる
 //    }, function ( result ) {
 //        result.forEach( function ( tab ) {
 //            if ( ! tab.url.match( /^https?:\/\/(?:(?:mobile)\.)?twitter\.com\// ) ) {
@@ -56,7 +57,7 @@ function get_values( name_list ) {
 */
 
 var reload_tabs = ( () => {
-    var reg_host = /([^.]+\.)?twitter\.com/,
+    var reg_host = /([^.]+\.)?x\.com/,
         
         reload_tab = ( tab_info ) => {
             log_debug( 'reload_tab():', tab_info );
@@ -94,9 +95,6 @@ var reload_tabs = ( () => {
         } );
     };
 } )();
-
-w.reload_tabs = reload_tabs;
-
 
 var request_tab_sorting = ( () => {
     var sort_index_to_tab_id_map_map = {},
@@ -266,12 +264,58 @@ function on_message( message, sender, sendResponse ) {
             } );
             return true;
         
-        default:
-            var flag_async = zip_request_handler( message, sender, sendResponse );
+        case 'GET_TAB_INFO' :
+            log_debug( 'GET_TAB_INFO', message );
             
-            return flag_async;
+            response = {
+                tab_info : CONTENT_TAB_INFOS[message.tab_id],
+            };
+            
+            sendResponse( response );
+            return true;
+        
+        case 'BULK_DOWNLOAD_REQUEST_FROM_OPTIONS' :
+            log_debug( 'BULK_DOWNLOAD_REQUEST_FROM_OPTIONS', message );
+            
+            bulk_download_request( message.tab, message.kind );
+            
+            sendResponse( {
+                result : 'OK', // 暫定的
+            } );
+            return true;
+        
+        default:
+            /*
+            //var flag_async = zip_request_handler( message, sender, sendResponse );
+            //return flag_async;
+            */
+            log_error( `Unsupported message: ${type}` );
+            sendResponse( {
+                result : 'NG',
+            } );
+            return true;
     }
 }  // end of on_message()
+
+
+function bulk_download_request( tab, kind ) {
+    if ( ( ! tab ) || ( ! tab.id ) ) {
+        log_error( '[bulk_download_request()] tab error', tab, kind );
+        return;
+    }
+    
+    // TODO: tab.url を参照するためには permissions に "tabs" が必要なので、なるべく避けたい
+    // → とりあえず送ってみて反応を見る
+    chrome.tabs.sendMessage( tab.id, {
+        type : 'BULK_DOWNLOAD_REQUEST',
+        kind : kind,
+    }, ( response ) => {
+        log_debug( '[BULK_DOWNLOAD_REQUEST] response:', response );
+        if ( ( chrome.runtime.lastError ) || ( response === undefined ) || ( ! response.url ) ) {
+            return;
+        }
+    } );
+} // end of bulk_download_request()
 
 
 // ■ 各種イベント設定
@@ -281,66 +325,127 @@ function on_message( message, sender, sendResponse ) {
 // メッセージ受信
 chrome.runtime.onMessage.addListener( on_message );
 
-// WebRequest
-
-//// ※ Firefox 61.0.1 で、content_scripts で $.ajax() を読んだ際、Referer が設定されない不具合に対応(0.2.6.1201)
-// → jquery.js にパッチをあてることで対処(0.2.6.1202)
-// 参照：[Content scripts - Mozilla | MDN](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Content_scripts#XHR_and_Fetch)
-//chrome.webRequest.onBeforeSendHeaders.addListener(
-//    function ( details ) {
-//        var requestHeaders = details.requestHeaders,
-//            referer;
-//        
-//        if ( ! requestHeaders.some( ( element ) => ( element.name.toLowerCase() == 'referer' ) ) ) {
-//            referer = details.documentUrl || 'https://twitter.com';
+/*
+//[2022.09.30] 現状では未使用な機能（api.x.com/oauth2/tokenへのアクセス時のcookie削除、旧Twitter("__tmdl=legacy")サポート）のコメントアウト
+//if ( MANIFEST_VERSION < 3 ) {
+//    // [webRequest]
+//    
+//    //// ※ Firefox 61.0.1 で、content_scripts で $.ajax() を読んだ際、Referer が設定されない不具合に対応(0.2.6.1201)
+//    // → jquery.js にパッチをあてることで対処(0.2.6.1202)
+//    // 参照：[Content scripts - Mozilla | MDN](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Content_scripts#XHR_and_Fetch)
+//    //chrome.webRequest.onBeforeSendHeaders.addListener(
+//    //    function ( details ) {
+//    //        var requestHeaders = details.requestHeaders,
+//    //            referer;
+//    //        
+//    //        if ( ! requestHeaders.some( ( element ) => ( element.name.toLowerCase() == 'referer' ) ) ) {
+//    //            referer = details.documentUrl || 'https://x.com';
+//    //            
+//    //            requestHeaders.push( {
+//    //                name : 'Referer',
+//    //                value : referer,
+//    //            } );
+//    //        }
+//    //        
+//    //        return { requestHeaders: requestHeaders };
+//    //    }
+//    //,   { urls : [ '*://x.com/*' ] }
+//    //,   [ 'blocking', 'requestHeaders' ]
+//    //);
+//    
+//    const
+//        reg_oauth2_token = /^https:\/\/api\.twitter\.com\/oauth2\/token/,
+//        reg_legacy_mark = /[?&]__tmdl=legacy(?:&|$)/;
+//    
+//    chrome.webRequest.onBeforeSendHeaders.addListener(
+//        function ( details ) {
+//            var requestHeaders,
+//                url = details.url;
 //            
-//            requestHeaders.push( {
-//                name : 'Referer',
-//                value : referer,
+//            if ( reg_oauth2_token.test( url ) ) {
+//                // ※ OAuth2 の token 取得時(api.x.com/oauth2/token)に Cookie を送信しないようにする
+//                requestHeaders = details.requestHeaders.filter( function ( element, index, array ) {
+//                    return ( element.name.toLowerCase() != 'cookie' );
+//                } );
+//            }
+//            else if ( reg_legacy_mark.test( url ) ) {
+//                // ※ "__tmdl=legacy" が付いている場合、旧 Twitter の HTML / API をコールするために User-Agent を変更
+//                requestHeaders = details.requestHeaders.map( function ( element ) {
+//                    if ( element.name.toLowerCase() == 'user-agent' ) {
+//                        //element.value = 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko';
+//                        element.value = 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) Waterfox/56.2';
+//                        // 参考：[ZusorCode/GoodTwitter](https://github.com/ZusorCode/GoodTwitter)
+//                    }
+//                    return element;
+//                } );
+//            }
+//            
+//            //console.log( requestHeaders );
+//            
+//            return ( ( requestHeaders !== undefined ) ? { requestHeaders : requestHeaders } : {} );
+//        }
+//    ,   { urls : [ '*://*.x.com/*' ] }
+//    ,   [ 'blocking', 'requestHeaders' ]
+//    );
+//}
+//else {
+//    // [declarativeNetRequest]
+//    
+//    // Chrome Web Store からインストールしたものだと
+//    // TypeError: Cannot read properties of undefined (reading 'addListener')
+//    // というエラーが発生（デベロッパーモードで[パッケージ化されていない拡張機能を読み込む]からの場合は発生しない）
+//    // →もともとの仕様らしい
+//    //   https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#event-onRuleMatchedDebug
+//    //   > onRuleMatchedDebug
+//    //   > Fired when a rule is matched with a request.
+//    //   > Only available for unpacked extensions with the declarativeNetRequestFeedback permission as this is intended to be used for debugging purposes only.
+//    if ( typeof chrome.declarativeNetRequest?.onRuleMatchedDebug?.addListener == 'function' ) {
+//        try {
+//            chrome.declarativeNetRequest.onRuleMatchedDebug.addListener( function ( obj ) {
+//                log_debug( '[declarativeNetRequest.onRuleMatchedDebug]', obj.request.url, obj );
 //            } );
 //        }
-//        
-//        return { requestHeaders: requestHeaders };
+//        catch ( error ) {
+//            log_error( error );
+//        }
 //    }
-//,   { urls : [ '*://twitter.com/*' ] }
-//,   [ 'blocking', 'requestHeaders' ]
-//);
+//}
+*/
 
-
-var reg_oauth2_token = /^https:\/\/api\.twitter\.com\/oauth2\/token/,
-    reg_legacy_mark = /[?&]__tmdl=legacy(?:&|$)/;
-
-chrome.webRequest.onBeforeSendHeaders.addListener(
-    function ( details ) {
-        var requestHeaders,
-            url = details.url;
+chrome.commands.onCommand.addListener( ( command ) => {
+    let callback;
+    
+    switch ( command ) {
+        case 'bulk_download' :
+            callback = ( active_tab ) => bulk_download_request( active_tab, 'media' );
+            break;
         
-        if ( reg_oauth2_token.test( url ) ) {
-            // ※ OAuth2 の token 取得時(api.twitter.com/oauth2/token)に Cookie を送信しないようにする
-            requestHeaders = details.requestHeaders.filter( function ( element, index, array ) {
-                return ( element.name.toLowerCase() != 'cookie' );
-            } );
-        }
-        else if ( reg_legacy_mark.test( url ) ) {
-            // ※ "__tmdl=legacy" が付いている場合、旧 Twitter の HTML / API をコールするために User-Agent を変更
-            requestHeaders = details.requestHeaders.map( function ( element ) {
-                if ( element.name.toLowerCase() == 'user-agent' ) {
-                    //element.value = 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko';
-                    element.value = 'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) Waterfox/56.2';
-                    // 参考：[ZusorCode/GoodTwitter](https://github.com/ZusorCode/GoodTwitter)
-                }
-                return element;
-            } );
-        }
+        case 'bulk_download_likes' :
+            callback = ( active_tab ) => bulk_download_request( active_tab, 'likes' );
+            break;
         
-        //console.log( requestHeaders );
-        
-        return ( ( requestHeaders !== undefined ) ? { requestHeaders : requestHeaders } : {} );
+        default :
+            return;
     }
-,   { urls : [ '*://*.twitter.com/*' ] }
-,   [ 'blocking', 'requestHeaders' ]
-);
+    
+    chrome.tabs.query( { active : true, currentWindow : true }, tabs => {
+        if ( tabs && tabs[ 0 ] ) {
+            callback( tabs[ 0 ] );
+        }
+    } );
+} );
 
-} )( window, document );
+Object.assign( w, {
+    CONTENT_TAB_INFOS,
+    log_debug,
+    log_error,
+    reload_tabs,
+    bulk_download_request,
+} );
+
+} )(
+    ( typeof window !== 'undefined' ? window : self ),
+    ( typeof document !== 'undefined' ? document : self.document )
+);
 
 // ■ end of file

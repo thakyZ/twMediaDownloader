@@ -5,36 +5,121 @@
 w.chrome = ( ( typeof browser != 'undefined' ) && browser.runtime ) ? browser : chrome;
 
 
-var USER_AGENT = w.navigator.userAgent.toLowerCase(),
+var DEBUG = false,
+    USER_AGENT = w.navigator.userAgent.toLowerCase(),
     IS_EDGE = ( 0 <= USER_AGENT.indexOf( 'edge' ) ),
     IS_FIREFOX = ( 0 <= USER_AGENT.indexOf( 'firefox' ) ),
-    IS_VIVALDI = ( 0 <= USER_AGENT.indexOf( 'vivaldi' ) ),
+    //IS_VIVALDI = ( 0 <= USER_AGENT.indexOf( 'vivaldi' ) ), // TODO: userAgentに'vivaldi'の文字が含まれなくなっている
     
     value_updated = false,
     background_window = chrome.extension.getBackgroundPage();
 
+if ( ! background_window ) {
+    background_window = {
+        log_debug : function () {
+            if ( ! DEBUG ) {
+                return;
+            }
+            console.log.apply( console, arguments );
+        },
+        log_error : function () {
+            console.error.apply( console, arguments );
+        },
+    };
+}
+
 background_window.log_debug( '***** options ******' );
 
 
-$( w ).on( ( IS_VIVALDI ) ? 'blur' : 'unload', function ( event ) {
-    // ※ Vivaldi 2.5.1525.48 では、popup を閉じても unload イベントは発生せず、次に popup を開いたときに発生してしまう
-    //    → 暫定的に blur イベントで対処
+var test_event_type = 'unknown';
+
+function request_reload_tabs( forced = false ) {
+    if ( DEBUG ) {
+        chrome.runtime.sendMessage( {
+            type : `TEST-${d.visibilityState}-*** ${test_event_type} ***`,
+        }, function ( response ) {
+            background_window.log_debug( response, '< TEST event done >' );
+        } );
+    }
     
     background_window.log_debug( '< unloaded > value_updated:', value_updated );
     
-    if ( ! value_updated ) {
+    if ( ( ! forced ) && ( ! value_updated ) ) {
         return;
     }
     
     value_updated = false;
     
-    background_window.reload_tabs();
-    // オプションを変更した場合にタブをリロード
-    // ※TODO: 一度でも変更すると、値が同じであってもリロードされる
-    
-    background_window.log_debug( '< reload_tabs() done >' );
+    if ( typeof background_window.reload_tabs == 'function' ) {
+        // Manifest V2だとpopup(options_ui)→backgroundのsendMessage()がうまく動作しない
+        // →backgroundpage下の関数を直接呼び出す
+        background_window.reload_tabs();
+        // オプションを変更した場合にタブをリロード
+        // ※TODO: 一度でも変更すると、値が同じであってもリロードされる
+        
+        background_window.log_debug( '< reload_tabs() done >' );
+    }
+    else {
+        // Manifest V3(Service Worker)だとbackgroundのwindowにはアクセスできない
+        // →代わりにsendMessage()使用
+        chrome.runtime.sendMessage( {
+            type : 'RELOAD_TABS',
+        }, function ( response ) {
+            background_window.log_debug( response, '< RELOAD_TABS event done >' );
+        } );
+    }
+}
+
+
+// TODO: Vivaldi(少なくとも2.5.1525.48以降)ではoptions_ui(popup)を閉じてもunloadイベントは発生せず、次にpopupを開いたときに発生してしまう
+// → 暫定的に blur イベントで対処
+// TODO: Manifest V3のChromeだとunloadやunloadイベント内のsendMessage()ではService Workerにメッセージが届かない模様
+// → visibilitychangeイベントで代替
+$( w ).on( 'unload blur visibilitychange', function ( event ) {
+    if ( ( event.type == 'visibilitychange' ) && ( d.visibilityState != 'hidden' ) ) {
+        return;
+    }
+    test_event_type = event.type;
+    request_reload_tabs();
 } );
 
+
+var get_active_tab_info = function() {
+        return new Promise( ( resolve, reject ) => {
+            chrome.tabs.query( { active : true, currentWindow : true }, tabs => {
+                if ( ( ! tabs ) || ( ! tabs[ 0 ] ) ) {
+                    reject();
+                    return;
+                }
+                
+                var tab_id = tabs[0].id,
+                    resolve_tab_info = ( tab_info ) => {
+                        if ( ! tab_info ) {
+                            reject();
+                            return;
+                        }
+                        if ( ! tab_info.url ) {
+                            reject();
+                            return;
+                        }
+                        tab_info.tab = tabs[ 0 ];
+                        resolve( tab_info );
+                    };
+                
+                if ( background_window.CONTENT_TAB_INFOS ) {
+                    resolve_tab_info( background_window.CONTENT_TAB_INFOS[tab_id] );
+                }
+                else {
+                    chrome.runtime.sendMessage( {
+                        type : 'GET_TAB_INFO',
+                        tab_id : tab_id,
+                    }, function ( response ) {
+                        resolve_tab_info( response.tab_info );
+                    } );
+                }
+            } );
+        } );
+    };
 
 $( async function () {
     var RADIO_KV_LIST = [
@@ -75,6 +160,86 @@ $( async function () {
                 
                 return option_keys;
             } )();
+    
+    var $bulk_download_button = $('input[name="BULK_DOWNLOAD"]'),
+        $bulk_download_likes_button = $('input[name="BULK_DOWNLOAD_LIKES"]'),
+        bulk_download_is_ready = false,
+        bulk_download_likes_is_ready = false;
+    
+    $bulk_download_button.hide();
+    $bulk_download_likes_button.hide();
+    
+    var active_tab_info = await get_active_tab_info().catch( error => ({}) );
+    
+    if ( active_tab_info.url ) {
+        var pathname = new URL( active_tab_info.url ).pathname,
+            pagename = ( pathname.match(/^\/([^/]+)/) || {} )[1];
+        
+        switch ( pagename ) {
+            case 'home' :
+            case 'explore' :
+            case 'messages' :
+            case 'settings' : {
+                break;
+            }
+            case 'i' : {
+                if ( /^\/i\/bookmarks(?=\/|$)/.test(pathname) ) {
+                    bulk_download_is_ready = true;
+                }
+                break;
+            }
+            case 'search' :
+            case 'hashtag' :
+            case 'notifications' : {
+                bulk_download_is_ready = true;
+                break;
+            }
+            default : {
+                if ( /^\/[^/]+(\/(?:with_replies|media|likes))?\/?$/.test(pathname) ) {
+                    bulk_download_is_ready = true;
+                    bulk_download_likes_is_ready = true;
+                }
+                break;
+            }
+        }
+        
+        if ( bulk_download_is_ready ) {
+            $bulk_download_button.on( 'click', ( $event ) => {
+                if ( background_window.bulk_download_request ) {
+                    background_window.bulk_download_request( active_tab_info.tab, 'media' );
+                    window.close();
+                }
+                else {
+                    chrome.runtime.sendMessage( {
+                        type : 'BULK_DOWNLOAD_REQUEST_FROM_OPTIONS',
+                        tab : active_tab_info.tab,
+                        kind : 'media',
+                    }, function ( response ) {
+                        window.close();
+                    } );
+                }
+            } );
+            $bulk_download_button.show();
+        }
+        if ( bulk_download_likes_is_ready ) {
+            $bulk_download_likes_button.on( 'click', ( $event ) => {
+                if ( background_window.bulk_download_request ) {
+                    background_window.bulk_download_request( active_tab_info.tab, 'likes' );
+                    window.close();
+                }
+                else {
+                    chrome.runtime.sendMessage( {
+                        type : 'BULK_DOWNLOAD_REQUEST_FROM_OPTIONS',
+                        tab : active_tab_info.tab,
+                        kind : 'likes',
+                    }, function ( response ) {
+                        window.close();
+                    } );
+                }
+            } );
+            $bulk_download_likes_button.show();
+        }
+    }
     
     STR_KV_LIST.forEach( function( str_kv ) {
         str_kv.val = chrome.i18n.getMessage( str_kv.key );
@@ -278,8 +443,24 @@ $( async function () {
                 icon_path = ( next_operation ) ? ( path_to_img + '/icon_16.png' ) : ( path_to_img + '/icon_16-gray.png' );
             
             jq_operation.val( button_text );
-            chrome.browserAction.setIcon( { path : icon_path } );
+            ( chrome.action || chrome.browserAction ).setIcon( { path : icon_path } );
             
+            if ( next_operation ) {
+                /*
+                //if ( bulk_download_is_ready ) {
+                //    $bulk_download_button.show();
+                //}
+                //if ( bulk_download_likes_is_ready ) {
+                //    $bulk_download_likes_button.show();
+                //}
+                */
+                // TODO: false → true のパターンだとページがリロードされないと正常に動かない
+                // →暫定的にダウンロードボタンは非表示のままにしておく
+            }
+            else {
+                $bulk_download_button.hide();
+                $bulk_download_likes_button.hide();
+            }
             await set_value( operation_key, next_operation );
             operation = next_operation;
         }
@@ -294,17 +475,17 @@ $( async function () {
     
     
     async function set_all_evt() {
-        RADIO_KV_LIST.forEach( async function( radio_kv ) {
+        for ( let radio_kv of RADIO_KV_LIST ) {
             await set_radio_evt( radio_kv );
-        } );
+        }
         
-        INT_KV_LIST.forEach( async function( int_kv ) {
+        for ( let int_kv of INT_KV_LIST ) {
             await set_int_evt( int_kv );
-        } );
+        }
         
-        STR_KV_LIST.forEach( async function( str_kv ) {
+        for ( let str_kv of STR_KV_LIST ) {
             await set_str_evt( str_kv );
-        } );
+        }
         
         await set_operation_evt();
         
