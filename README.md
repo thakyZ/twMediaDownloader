@@ -1,3 +1,13 @@
+# Important information about this fork
+
+> [!NOTE]  
+> This fork exists as a patch for the extension after X, formerly Twitter, changed the primary URL from Twitter.com to X.com, which was done around 16th May, 2024. Functionality which was broken within this extension prior to that date is still broken.
+
+> [!WARNING]  
+> twMediaDownloader is abandonware by its original author. Various functionality of the extension has not worked since X/Twitter disabled the free, public API. I still like this extension for some of its functionality and wanted to preserve as much as possible that remains functional, however any feature previously offered that relied upon the public API will not work.
+
+--------
+
 Twitter メディアダウンローダ (twMediaDownloader)
 ================================================
 
