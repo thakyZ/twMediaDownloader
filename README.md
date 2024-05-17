@@ -1,10 +1,15 @@
 # Important information about this fork
 
-> [!NOTE]  
-> This fork exists as a patch for the extension after X, formerly Twitter, changed the primary URL from Twitter.com to X.com, which was done around 16th May, 2024. Functionality which was broken within this extension prior to that date is still broken.
-
 > [!WARNING]  
-> twMediaDownloader is abandonware by its original author. Various functionality of the extension has not worked since X/Twitter disabled the free, public API. I still like this extension for some of its functionality and wanted to preserve as much as possible that remains functional, however any feature previously offered that relied upon the public API will not work.
+> This fork patches the extension after X/Twitter changed URLs site-wide from `twitter.com` to `x.com` on 16th May, 2024. Otherwise this extension was abandoned by its original author. Much of its functionality for bulk downloading media has been broken since X/Twitter turned off its public API in 2023.
+
+I went through the files as I had to change all references to `twitter.com` to `x.com`. It seems X/Twitter even moved over all API calls to `api.x.com`, etc. That surely won't present problems.
+
+Functionality which relied on the public API that was previously broken continues to be broken. The extension does dump various errors to the console as a result of trying to access endpoints since shutdown.
+
+I did this largely for myself as despite being partially broken there was enough working here that I found useful. It is the only extension I've found that provides a one-click way to get a video's URL for sharing purposes, which I personally find easier to share than downloading.
+
+**The readme below is outdated.** The original author removed the extension from the Chrome/Firefox extension sites so the links are dead. Given variou
 
 --------
 

@@ -134,7 +134,7 @@ var OPTIONS = {
 var SCRIPT_NAME = 'twMediaDownloader',
     IS_CHROME_EXTENSION = !! ( w.is_chrome_extension ),
     OAUTH_POPUP_WINDOW_NAME = SCRIPT_NAME + '-OAuthAuthorization',
-    DEBUG = true;
+    DEBUG = false;
 
 
 if ( d.querySelector( 'div#react-root' ) ) {

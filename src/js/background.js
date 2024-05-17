@@ -5,7 +5,7 @@
 w.chrome = ( ( typeof browser != 'undefined' ) && browser.runtime ) ? browser : chrome;
 
 var SCRIPT_NAME = 'twMediaDownloader',
-    DEBUG = true,
+    DEBUG = false,
     MANIFEST_VERSION = chrome.runtime.getManifest().manifest_version,
     CONTENT_TAB_INFOS = {};
 
