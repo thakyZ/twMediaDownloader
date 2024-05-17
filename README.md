@@ -9,7 +9,7 @@ Functionality which relied on the public API that was previously broken continue
 
 I did this largely for myself as despite being partially broken there was enough working here that I found useful. It is the only extension I've found that provides a one-click way to get a video's URL for sharing purposes, which I personally find easier to share than downloading.
 
-**The readme below is outdated.** The original author removed the extension from the Chrome/Firefox extension sites so the links are dead. Given variou
+**The readme below is outdated.** The original author removed the extension from the Chrome/Firefox extension sites so the links are dead.
 
 --------
 
