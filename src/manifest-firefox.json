@@ -1,7 +1,7 @@
 {
     "manifest_version" : 2
-,   "name" : "xMediaDownloader"
-,   "short_name" : "__MSG_ext_short_name__"
+,   "name" : "X Media Downloader"
+,   "short_name" : "xMediaDownloader"
 ,   "version" : "0.1.5.4"
 ,   "description" : "__MSG_ext_description__"
 ,   "author" : "furyu"
@@ -19,8 +19,6 @@
         "*://video.twimg.com/*",
         "*://*.cdn.vine.co/*"
     ]
-
-
 ,   "content_scripts" : [
         {
             "matches" : [ "*://x.com/*", "*://tweetdeck.x.com/*", "*://api.x.com/*", "*://pbs.twimg.com/media/*", "*://mobile.x.com/*" ]
@@ -68,7 +66,6 @@
             },
             "description" : "__MSG_BULK_DOWNLOAD__"
         },
-        
         "bulk_download_likes" : {
             "suggested_key" : {
                 "default" : "Shift+Alt+L",

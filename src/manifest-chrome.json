@@ -1,7 +1,7 @@
 {
     "manifest_version" : 3
-,   "name" : "xMediaDownloader"
-,   "short_name" : "__MSG_ext_short_name__"
+,   "name" : "X Media Downloader"
+,   "short_name" : "xMediaDownloader"
 ,   "version" : "0.1.5.4"
 ,   "description" : "__MSG_ext_description__"
 ,   "author" : "furyu"

@@ -19,7 +19,7 @@ async function main(args) {
   const file_ext = args[2] === "firefox" ? ".xpi" : ".zip";
 
   const archive = archiver("zip");
-  const output = fs.createWriteStream(`${manifest.name}${file_ext}`);
+  const output = fs.createWriteStream(`${manifest.short_name}-${manifest.version}${file_ext}`);
   output.on("close", () => {
     console.log(archive.pointer() + " total bytes");
     console.log("archiver has been finalized and the output file descriptor has closed.");
