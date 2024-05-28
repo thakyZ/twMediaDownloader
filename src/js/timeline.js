@@ -401,10 +401,13 @@ const
     } )(),
     
     wait = async ( wait_msec ) => {
-        if ( wait_msec <= 0 ) {
-            wait_msec = 1;
-        }
         await new Promise( ( resolve, reject ) => {
+            // If tab not active, chrome will change our timeout to at lease 1000ms, so we won't call it if it's 0
+            // According https://codereview.chromium.org/6577021
+            if ( wait_msec <= 0 ) {
+                resolve();
+                return;
+            }
             setTimeout( () => {
                 resolve();
             }, wait_msec );
