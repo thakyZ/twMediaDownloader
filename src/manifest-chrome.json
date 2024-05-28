@@ -16,7 +16,10 @@
         "storage"
     ]
 ,   "host_permissions" : [
-        "*://*.x.com/*", "*://pbs.twimg.com/*", "*://video.twimg.com/*", "*://*.cdn.vine.co/*"
+        "*://*.x.com/*",
+        "*://pbs.twimg.com/*",
+        "*://video.twimg.com/*",
+        "*://*.cdn.vine.co/*"
     ]
 ,   "content_scripts" : [
         {
@@ -46,6 +49,7 @@
     ]
 ,   "background" : {
         "service_worker" : "background-wrapper.js"
+
     }
 ,   "options_ui" : {
         "page" : "html/options.html"

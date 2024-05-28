@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "archiver": "^7.0.1",
     "eslint": "^6.8.0",
     "eslint-plugin-jquery": "^1.5.1"
   },
@@ -7,5 +8,10 @@
     "acorn": "^7.1.1",
     "lodash": "^4.17.21",
     "minimist": "^1.2.2"
+  },
+  "scripts": {
+    "build:chrome": "node build.js chrome",
+    "build:firefox": "node build.js firefox",
+    "build": "yarn build:chrome && yarn build:firefox"
   }
 }
