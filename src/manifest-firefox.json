@@ -13,11 +13,13 @@
     ,   "128" : "img/icon_128.png"
     }
 ,   "permissions": [
-        "storage",
-        "*://*.x.com/*",
-        "*://pbs.twimg.com/*",
-        "*://video.twimg.com/*",
-        "*://*.cdn.vine.co/*"
+        "contextMenus"
+    ,   "downloads"
+    ,   "storage"
+    ,   "*://*.x.com/*"
+    ,   "*://*.twimg.com/*"
+    ,   "*://video.twimg.com/*"
+    ,   "*://*.cdn.vine.co/*"
     ]
 ,   "content_scripts" : [
         {
@@ -76,8 +78,8 @@
     }
 ,   "applications": {
         "gecko": {
-            "id": "{8b344d1d-265c-4d48-8418-0b522359bad2}",
-            "strict_min_version": "57.0a1"
+            "id": "{8af5d1ff-db50-462c-b3e1-28c772d54043}"
+        ,   "strict_min_version": "57.0a1"
         }
     }
 }
