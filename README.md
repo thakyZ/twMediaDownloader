@@ -1,3 +1,18 @@
+# Important information about this fork
+
+> [!WARNING]  
+> This fork patches the extension after X/Twitter changed URLs site-wide from `twitter.com` to `x.com` on 16th May, 2024. Otherwise this extension was abandoned by its original author. Much of its functionality for bulk downloading media has been broken since X/Twitter turned off its public API in 2023.
+
+I went through the files as I had to change all references to `twitter.com` to `x.com`. It seems X/Twitter even moved over all API calls to `api.x.com`, etc. That surely won't present problems.
+
+Functionality which relied on the public API that was previously broken continues to be broken. The extension does dump various errors to the console as a result of trying to access endpoints since shutdown.
+
+I did this largely for myself as despite being partially broken there was enough working here that I found useful. It is the only extension I've found that provides a one-click way to get a video's URL for sharing purposes, which I personally find easier to share than downloading.
+
+**The readme below is outdated.** The original author removed the extension from the Chrome/Firefox extension sites so the links are dead.
+
+--------
+
 Twitter メディアダウンローダ (twMediaDownloader)
 ================================================
 
@@ -5,8 +20,8 @@ Twitter メディアダウンローダ (twMediaDownloader)
 - Copyright (c) 2016 風柳(furyu)  
 - 対象ブラウザ： Google Chrome、Firefox
 
-[Web 版公式 Twitter](https://twitter.com/) のメディア（画像／動画）を、原寸サイズでダウンロードするためのスクリプト。  
-※個別ツイートのメディアダウンロードについては、[TweetDeck](https://tweetdeck.twitter.com/) でも対応。  
+[Web 版公式 Twitter](https://x.com/) のメディア（画像／動画）を、原寸サイズでダウンロードするためのスクリプト。  
+※個別ツイートのメディアダウンロードについては、[TweetDeck](https://tweetdeck.x.com/) でも対応。  
 
 
 ■ インストール方法 
@@ -30,11 +45,11 @@ Firefox Quantum で、
 ### ユーザースクリプト版
 Firefox＋<s>[Greasemonkey](https://addons.mozilla.org/ja/firefox/addon/greasemonkey/)</s>[Tampermonkey](https://addons.mozilla.org/ja/firefox/addon/tampermonkey/)、Google Chrome＋[Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=ja) の環境で、  
 
-> [Twitter Media Downloader for new Twitter.com 2019](http://furyutei.github.io/twMediaDownloader/src/js/main_react.user.js)  
+> [Twitter Media Downloader for new x.com 2019](http://furyutei.github.io/twMediaDownloader/src/js/main_react.user.js)  
 
 > [Twitter Media Downloader for TweetDeck](http://furyutei.github.io/twMediaDownloader/src/js/main_tweetdeck.user.js)  
 
-> [Twitter Media Downloader for old Twitter.com (twMediaDownloader.user.js)](https://furyutei.work/userjs/furyutei/twMediaDownloader.user.js)  
+> [Twitter Media Downloader for old x.com (twMediaDownloader.user.js)](https://furyutei.work/userjs/furyutei/twMediaDownloader.user.js)  
                                 
 をクリックし、指示に従ってインストール。  
 ※ Firefox では Quantum(57) + Greasemonkey 4 より動作しなくなった（代わりに Tampermonkey を使用すること）。  
@@ -42,7 +57,7 @@ Firefox＋<s>[Greasemonkey](https://addons.mozilla.org/ja/firefox/addon/greasemo
 
 ■ 使い方
 ---
-[Web 版公式 Twitter](https://twitter.com/) 上で、ユーザータイムラインや検索タイムラインを開くと、「メディア↓」のようなリンクが挿入される。  
+[Web 版公式 Twitter](https://x.com/) 上で、ユーザータイムラインや検索タイムラインを開くと、「メディア↓」のようなリンクが挿入される。  
 ![下向き矢印のリンク](https://cdn-ak.f.st-hatena.com/images/fotolife/f/furyu-tei/20160723/20160723224518.jpg)  
 
 これをクリックするとダイアログが表示されるので、[開始]ボタンをクリックすると、原寸画像/動画の ZIP 化が開始される。  

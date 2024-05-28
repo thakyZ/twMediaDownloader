@@ -1,6 +1,6 @@
 {
     "manifest_version" : 3
-,   "name" : "__MSG_ext_title__"
+,   "name" : "xMediaDownloader"
 ,   "short_name" : "__MSG_ext_short_name__"
 ,   "version" : "0.1.5.4"
 ,   "description" : "__MSG_ext_description__"
@@ -16,29 +16,29 @@
         "storage"
     ]
 ,   "host_permissions" : [
-        "*://*.twitter.com/*", "*://pbs.twimg.com/*", "*://video.twimg.com/*", "*://*.cdn.vine.co/*"
+        "*://*.x.com/*", "*://pbs.twimg.com/*", "*://video.twimg.com/*", "*://*.cdn.vine.co/*"
     ]
 ,   "content_scripts" : [
         {
-            "matches" : [ "*://twitter.com/*", "*://tweetdeck.twitter.com/*", "*://api.twitter.com/*", "*://pbs.twimg.com/media/*", "*://mobile.twitter.com/*" ]
+            "matches" : [ "*://x.com/*", "*://tweetdeck.x.com/*", "*://api.x.com/*", "*://pbs.twimg.com/media/*", "*://mobile.x.com/*" ]
         ,   "js" : [ "js/browser_info.js", "js/jquery.min.js", "js/twitter-oauth/sha1.js", "js/twitter-oauth/oauth.js", "js/twitter-oauth/twitter-api.js", "js/session.js" ]
         ,   "run_at" : "document_start"
         ,   "all_frames" : false
         }
     ,   {
-            "matches" : [ "*://twitter.com/*", "*://tweetdeck.twitter.com/*", "*://pbs.twimg.com/media/*", "*://mobile.twitter.com/*" ]
+            "matches" : [ "*://x.com/*", "*://tweetdeck.x.com/*", "*://pbs.twimg.com/media/*", "*://mobile.x.com/*" ]
         ,   "js" : [ "js/decimal.min.js", "js/jszip.min.js", "js/init.js", "js/timeline.js" ]
         ,   "run_at" : "document_start"
         ,   "all_frames" : true
         }
     ,   {
-            "matches" : [ "*://twitter.com/*", "*://mobile.twitter.com/*" ]
+            "matches" : [ "*://x.com/*", "*://mobile.x.com/*" ]
         ,   "js" : [ "js/main_react.user.js" ]
         ,   "run_at" : "document_end"
         ,   "all_frames" : true
         }
     ,   {
-            "matches" : [ "*://tweetdeck.twitter.com/*" ]
+            "matches" : [ "*://tweetdeck.x.com/*" ]
         ,   "js" : [ "js/main_tweetdeck.user.js" ]
         ,   "run_at" : "document_end"
         ,   "all_frames" : true

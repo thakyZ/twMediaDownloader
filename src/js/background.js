@@ -44,7 +44,7 @@ function get_values( name_list ) {
 /*
 //function reload_tabs() {
 //    chrome.tabs.query( {
-//        url : '*://*.twitter.com/*' // TODO: url で query() を呼ぶためには tabs permission が必要になる
+//        url : '*://*.x.com/*' // TODO: url で query() を呼ぶためには tabs permission が必要になる
 //    }, function ( result ) {
 //        result.forEach( function ( tab ) {
 //            if ( ! tab.url.match( /^https?:\/\/(?:(?:mobile)\.)?twitter\.com\// ) ) {
@@ -57,7 +57,7 @@ function get_values( name_list ) {
 */
 
 var reload_tabs = ( () => {
-    var reg_host = /([^.]+\.)?twitter\.com/,
+    var reg_host = /([^.]+\.)?x\.com/,
         
         reload_tab = ( tab_info ) => {
             log_debug( 'reload_tab():', tab_info );
@@ -326,7 +326,7 @@ function bulk_download_request( tab, kind ) {
 chrome.runtime.onMessage.addListener( on_message );
 
 /*
-//[2022.09.30] 現状では未使用な機能（api.twitter.com/oauth2/tokenへのアクセス時のcookie削除、旧Twitter("__tmdl=legacy")サポート）のコメントアウト
+//[2022.09.30] 現状では未使用な機能（api.x.com/oauth2/tokenへのアクセス時のcookie削除、旧Twitter("__tmdl=legacy")サポート）のコメントアウト
 //if ( MANIFEST_VERSION < 3 ) {
 //    // [webRequest]
 //    
@@ -339,7 +339,7 @@ chrome.runtime.onMessage.addListener( on_message );
 //    //            referer;
 //    //        
 //    //        if ( ! requestHeaders.some( ( element ) => ( element.name.toLowerCase() == 'referer' ) ) ) {
-//    //            referer = details.documentUrl || 'https://twitter.com';
+//    //            referer = details.documentUrl || 'https://x.com';
 //    //            
 //    //            requestHeaders.push( {
 //    //                name : 'Referer',
@@ -349,7 +349,7 @@ chrome.runtime.onMessage.addListener( on_message );
 //    //        
 //    //        return { requestHeaders: requestHeaders };
 //    //    }
-//    //,   { urls : [ '*://twitter.com/*' ] }
+//    //,   { urls : [ '*://x.com/*' ] }
 //    //,   [ 'blocking', 'requestHeaders' ]
 //    //);
 //    
@@ -363,7 +363,7 @@ chrome.runtime.onMessage.addListener( on_message );
 //                url = details.url;
 //            
 //            if ( reg_oauth2_token.test( url ) ) {
-//                // ※ OAuth2 の token 取得時(api.twitter.com/oauth2/token)に Cookie を送信しないようにする
+//                // ※ OAuth2 の token 取得時(api.x.com/oauth2/token)に Cookie を送信しないようにする
 //                requestHeaders = details.requestHeaders.filter( function ( element, index, array ) {
 //                    return ( element.name.toLowerCase() != 'cookie' );
 //                } );
@@ -384,7 +384,7 @@ chrome.runtime.onMessage.addListener( on_message );
 //            
 //            return ( ( requestHeaders !== undefined ) ? { requestHeaders : requestHeaders } : {} );
 //        }
-//    ,   { urls : [ '*://*.twitter.com/*' ] }
+//    ,   { urls : [ '*://*.x.com/*' ] }
 //    ,   [ 'blocking', 'requestHeaders' ]
 //    );
 //}

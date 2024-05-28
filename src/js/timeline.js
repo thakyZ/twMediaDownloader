@@ -488,21 +488,21 @@ const
             Object.assign( self, {
                 API_DEFINITIONS : {
                     [ TIMELINE_TYPE.user ] : {
-                        url_template : 'https://api.twitter.com/1.1/statuses/user_timeline.json?count=#COUNT#&include_my_retweet=1&include_rts=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        url_template : 'https://api.x.com/1.1/statuses/user_timeline.json?count=#COUNT#&include_my_retweet=1&include_rts=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
                         tweet_number : { default : 20, limit : 200 },
                         min_delay_ms : self.TWITTER_API_DELAY_SHORT,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.media ] : {
-                        url_template : 'https://api.twitter.com/2/timeline/media/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
+                        url_template : 'https://api.x.com/2/timeline/media/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.search ] : {
-                        url_template : 'https://api.twitter.com/1.1/search/universal.json?q=#QUERY#&count=#COUNT#&modules=status&result_type=recent&pc=false&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        url_template : 'https://api.x.com/1.1/search/universal.json?q=#QUERY#&count=#COUNT#&modules=status&result_type=recent&pc=false&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
                         tweet_number : { default : 20, limit : 100 },
                         min_delay_ms : self.TWITTER_API_DELAY_SHORT,
                         max_retry : 3,
@@ -510,28 +510,28 @@ const
                     },
                     
                     [ TIMELINE_TYPE.notifications ] : {
-                        url_template : 'https://api.twitter.com/1.1/activity/about_me.json?model_version=7&count=#COUNT#&skip_aggregation=true&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        url_template : 'https://api.x.com/1.1/activity/about_me.json?model_version=7&count=#COUNT#&skip_aggregation=true&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
                         tweet_number : { default : 20, limit : 200 },
                         min_delay_ms : self.TWITTER_API_DELAY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.likes_legacy ] : {
-                        url_template : 'https://api.twitter.com/1.1/favorites/list.json?count=#COUNT#&include_my_retweet=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
+                        url_template : 'https://api.x.com/1.1/favorites/list.json?count=#COUNT#&include_my_retweet=1&cards_platform=Web-13&include_entities=1&include_user_entities=1&include_cards=1&send_error_codes=1&tweet_mode=extended&include_ext_alt_text=true&include_reply_count=true',
                         tweet_number : { default : 20, limit : 200 },
                         min_delay_ms : self.TWITTER_API_DELAY_VERY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.likes ] : {
-                        url_template : 'https://api.twitter.com/2/timeline/favorites/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&sorted_by_time=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
+                        url_template : 'https://api.x.com/2/timeline/favorites/#USER_ID#.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&sorted_by_time=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_LONG,
                         max_retry : 3,
                     },
                     
                     [ TIMELINE_TYPE.bookmarks ] : {
-                        url_template : 'https://api.twitter.com/2/timeline/bookmark.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
+                        url_template : 'https://api.x.com/2/timeline/bookmark.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=#COUNT#&ext=mediaStats%2ChighlightedLabel',
                         tweet_number : { default : 20, limit : 40 },
                         min_delay_ms : self.TWITTER_API_DELAY_SHORT,
                         max_retry : 3,
@@ -708,7 +708,7 @@ const
                 return { error : 'Illegal parameters' };
             }
             
-            let api_url = 'https://api.twitter.com/1.1/users/show.json?' + ( user_id ? 'user_id=' + encodeURIComponent( user_id ) : 'screen_name=' + encodeURIComponent( screen_name ) ),
+            let api_url = 'https://api.x.com/1.1/users/show.json?' + ( user_id ? 'user_id=' + encodeURIComponent( user_id ) : 'screen_name=' + encodeURIComponent( screen_name ) ),
                 result = await self.fetch_json( api_url ).catch( ( error ) => {
                     return { error : error };
                 } );
@@ -738,7 +738,7 @@ const
             
             if ( IS_WEB_EXTENSION && browser && ( ! IS_FIREFOX ) ) {
                 /*
-                // 注意：[Firefox でコンテナーを使用している場合、background 経由だと動作しない（403 Forbidden発生）](https://twitter.com/furyutei/status/1295057562870546433)
+                // 注意：[Firefox でコンテナーを使用している場合、background 経由だと動作しない（403 Forbidden発生）](https://x.com/furyutei/status/1295057562870546433)
                 */
                 
                 /*
@@ -798,7 +798,7 @@ const
                 self = this;
             
             if ( ! self.language ) {
-                if ( new URL( location.href ).hostname == 'tweetdeck.twitter.com' ) {
+                if ( new URL( location.href ).hostname == 'tweetdeck.x.com' ) {
                     self.language = ( navigator.browserLanguage || navigator.language || navigator.userLanguage ).substr( 0, 2 );
                 }
                 else {
@@ -1483,7 +1483,7 @@ const
                     reply_count : tweet_status.reply_count,
                     retweet_count : tweet_status.retweet_count,
                     like_count : tweet_status.favorite_count,
-                    tweet_url : 'https://twitter.com/' + user.screen_name + '/status/' + tweet_status.id_str,
+                    tweet_url : 'https://x.com/' + user.screen_name + '/status/' + tweet_status.id_str,
                 } );
             }
             catch ( error ) {
