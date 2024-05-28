@@ -12,6 +12,6 @@
   "scripts": {
     "build:chrome": "node build.js chrome",
     "build:firefox": "node build.js firefox",
-    "build": "yarn build:chrome && yarn build:firefox"
+    "build": "yarn build:firefox && yarn build:chrome"
   }
 }

@@ -38,7 +38,13 @@ async function main(args) {
     }
   });
   archive.pipe(output);
-  archive.directory(src_dir, false);
+  archive.directory(path.join(src_dir, "_locales"),                 "_locales");
+  archive.directory(path.join(src_dir, "css"),                      "css");
+  archive.directory(path.join(src_dir, "html"),                     "html");
+  archive.directory(path.join(src_dir, "img"),                      "img");
+  archive.directory(path.join(src_dir, "js"),                       "js");
+  archive.file(path.join(src_dir, "background-wrapper.js"), { name: "background-wrapper.js" });
+  archive.file(path.join(src_dir, "manifest.json"),         { name: "manifest.json" });
   archive.finalize();
 }
 
