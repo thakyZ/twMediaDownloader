@@ -1,6 +1,6 @@
 {
     "manifest_version" : 3
-,   "name" : "xMediaDownloader"
+,   "name" : "__MSG_ext_title__"
 ,   "short_name" : "__MSG_ext_short_name__"
 ,   "version" : "0.1.5.4"
 ,   "description" : "__MSG_ext_description__"
@@ -16,7 +16,10 @@
         "storage"
     ]
 ,   "host_permissions" : [
-        "*://*.x.com/*", "*://pbs.twimg.com/*", "*://video.twimg.com/*", "*://*.cdn.vine.co/*"
+        "*://*.x.com/*",
+        "*://pbs.twimg.com/*",
+        "*://video.twimg.com/*",
+        "*://*.cdn.vine.co/*"
     ]
 ,   "content_scripts" : [
         {
@@ -46,6 +49,7 @@
     ]
 ,   "background" : {
         "service_worker" : "background-wrapper.js"
+
     }
 ,   "options_ui" : {
         "page" : "html/options.html"
